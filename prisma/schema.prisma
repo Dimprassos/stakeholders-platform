@@ -1,0 +1,140 @@
+// Prisma schema for the Sponsorship Platform
+// Mirrors the data model in docs/PLAN.md §8.
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Enums ----------
+
+enum Role {
+  ADMIN
+}
+
+enum SponsorStatus {
+  LEAD
+  CONTACTED
+  INTERESTED
+  CONFIRMED
+  DECLINED
+}
+
+enum SubmissionStatus {
+  NEW
+  REVIEWED
+  CONVERTED
+  SPAM
+}
+
+enum OutreachStatus {
+  DRAFT
+  SENT
+  BOUNCED
+  REPLIED
+}
+
+// ---------- Models ----------
+
+/// Admin / organizer accounts (CMS users).
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+/// A sponsorship package / tier shown on the public packages page.
+model Package {
+  id           String   @id @default(cuid())
+  name         String
+  tier         String
+  priceCents   Int
+  currency     String   @default("EUR")
+  benefits     String[]
+  slotsTotal   Int?
+  slotsTaken   Int      @default(0)
+  displayOrder Int      @default(0)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sponsors    Sponsor[]
+  submissions Submission[]
+}
+
+/// A company in the funnel. Doubles as lead/prospect and confirmed sponsor
+/// via `status`; only `isPublished` ones appear on the public page.
+model Sponsor {
+  id           String        @id @default(cuid())
+  companyName  String
+  logoUrl      String?
+  websiteUrl   String?
+  description  String?
+  packageId    String?
+  package      Package?      @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  contactName  String?
+  contactEmail String?
+  status       SponsorStatus @default(LEAD)
+  isPublished  Boolean       @default(false)
+  displayOrder Int           @default(0)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  outreach Outreach[]
+}
+
+/// A public "Become a sponsor" interest-form submission.
+model Submission {
+  id                String           @id @default(cuid())
+  companyName       String
+  contactName       String
+  email             String
+  phone             String?
+  packageInterestId String?
+  packageInterest   Package?         @relation(fields: [packageInterestId], references: [id], onDelete: SetNull)
+  message           String?
+  consentGiven      Boolean          @default(false)
+  status            SubmissionStatus @default(NEW)
+  createdAt         DateTime         @default(now())
+}
+
+/// A single outreach email sent (or drafted) to a prospect/sponsor.
+model Outreach {
+  id            String         @id @default(cuid())
+  sponsorId     String?
+  sponsor       Sponsor?       @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
+  prospectEmail String?
+  templateId    String?
+  template      EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  subject       String
+  body          String
+  status        OutreachStatus @default(DRAFT)
+  sentAt        DateTime?
+  createdAt     DateTime       @default(now())
+}
+
+/// Reusable email template with merge fields (rendered at send time).
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  name      String
+  subject   String
+  body      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outreach Outreach[]
+}
+
+/// Simple key/value store for event/site settings (name, dates, venue, sender).
+model Setting {
+  key   String @id
+  value String
+}

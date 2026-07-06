@@ -1,0 +1,493 @@
+Here is the finalized, comprehensive draft plan for your Sponsorship Management
+
+Platform, tailored exactly to your chosen tech stack (React + Vite, Node.js +
+
+Express, SQLite raw queries, and Ethereal for emails).
+ 
+🚀 Implementation Plan: Sponsorship Management Platform
+ 
+1. The Technology Stack
+ 
+  - Frontend: React.js (bootstrapped with Vite), React Router v6 (for SPA
+
+    navigation), Tailwind CSS (for styling), React Hook Form (for form
+
+    handling).
+
+  - Backend: Node.js with Express.js.
+
+  - Database: SQLite (.db file) managed locally using DB Browser for SQLite. No
+
+    ORMs—just raw SQL queries (sqlite and sqlite3 npm packages).
+
+  - Authentication: JWT (JSON Web Tokens) for Admin login. Node's built-in
+
+    crypto module for generating Sponsor magic links.
+
+  - Email Emulation: Nodemailer configured with Ethereal (captures emails
+
+    locally and provides a web link to preview them without spamming real
+
+    inboxes).
+
+  - File Uploads: multer (Node.js middleware) to save uploaded sponsor logos
+
+    locally, storing the file path in SQLite.
+ 
+2. Database Schema (SQLite)
+ 
+You will create a sponsorship.db file. Here are the core tables and raw SQL
+
+structures you will execute:
+ 
+1.  admins: id (PK), email (TEXT), password_hash (TEXT).
+
+2.  packages: id (PK), name (TEXT), description (TEXT), price (REAL), benefits
+
+    (TEXT - stored as JSON string), is_active (BOOLEAN).
+
+3.  candidates: id (PK), company_name (TEXT), contact_email (TEXT), status
+
+    (TEXT: PENDING, INVITE_SENT, ACCEPTED, DETAILS_SUBMITTED), package_id
+
+    (INTEGER, FK), magic_token (TEXT), token_expires_at (DATETIME).
+
+4.  sponsor_details: id (PK), candidate_id (INTEGER, FK), legal_name (TEXT),
+
+    billing_address (TEXT), vat_number (TEXT), website_url (TEXT),
+
+    logo_file_path (TEXT).
+ 
+3. Backend API Architecture (Node.js & Express)
+ 
+The Express server will run on localhost:5000 and act as the bridge between your
+
+SQLite DB and the React frontend.
+ 
+A. Admin Routes (Protected by JWT Middleware)
+ 
+  - POST /api/auth/login: Verifies admin email/password against the admins
+
+    table. Returns a JWT.
+
+  - GET /api/admin/packages: Runs SELECT * FROM packages to display in the CMS.
+
+  - POST /api/admin/packages: Runs INSERT INTO packages... to create a new tier
+
+    (e.g., Gold, Silver).
+
+  - GET /api/admin/candidates: Runs SELECT * FROM candidates to populate the
+
+    sponsor pipeline table.
+
+  - POST /api/admin/candidates/:id/invite:
+
+      - Generates a 32-char crypto token.
+
+      - Runs UPDATE candidates SET magic_token = ? ...
+
+      - Uses Nodemailer + Ethereal to send the email containing the magic link
+
+        (http://localhost:5173/invite/{token}).
+ 
+B. Sponsor Routes (Public, Protected by Magic Token)
+ 
+  - GET /api/sponsor/invite/:token:
+
+      - Runs SELECT * FROM candidates WHERE magic_token = ?.
+
+      - Validates expiration date.
+
+      - Returns candidate and assigned package details.
+
+  - POST /api/sponsor/invite/:token/accept: Updates candidate status to
+
+    ACCEPTED.
+
+  - POST /api/sponsor/invite/:token/submit-details:
+
+      - Uses multer to handle the logo image upload.
+
+      - Runs INSERT INTO sponsor_details ... with billing info, VAT, and the
+
+        logo file path.
+
+      - Updates candidate status to DETAILS_SUBMITTED.
+ 
+4. Frontend Architecture (React.js + Tailwind)
+ 
+The React application will run on localhost:5173 (Vite's default port). It is
+
+split into two distinct areas via React Router.
+ 
+A. Admin CMS (The Control Panel)
+ 
+  - /admin/login: Simple centered card with Email/Password. Stores JWT in
+
+    localStorage on success.
+
+  - /admin/dashboard: A layout with a sidebar (Navigation) and main content
+
+    area. Shows top-level metrics (e.g., Total Invites Sent, Total Accepted).
+
+  - /admin/packages: A page to view/add/edit sponsorship packages.
+
+  - /admin/candidates: The CRM Table. Shows columns: Company, Email, Assigned
+
+    Package, Status.
+
+      - Action: A "Send Invite" button next to each candidate that triggers the
+
+        Ethereal email.
+ 
+B. Sponsor UI (The Client Experience)
+ 
+  - /invite/:token: The Proposal Landing Page. Uses useEffect to fetch package
+
+    data based on the token. Displays a welcome message ("Welcome, [Company
+
+    Name]") and Package perks. Has a big "Accept Package" button.
+
+  - /invite/:token/form: The Onboarding Wizard. Displays form fields for Legal
+
+    Name, Billing Address, VAT Number, and a file input for their Logo.
+
+  - /invite/success: A final "Thank You" screen informing them that the admin
+
+    will be in touch with the invoice.
+ 
+5. End-to-End User Flow
+ 
+Flow 1: Admin Prepares the Pitch
+ 
+1.  Admin opens React app (/admin/login) and logs in.
+
+2.  Admin goes to Packages and creates a "Diamond Sponsor - $5,000" package.
+
+3.  Admin goes to Candidates and adds "TechCorp Inc." with the email
+
+    ceo@techcorp.com, assigning them the Diamond package.
+
+4.  Admin clicks "Send Invite".
+
+5.  Backend generates the magic link and sends it. Terminal outputs the Ethereal
+
+    link for you to view the email.
+ 
+Flow 2: Sponsor Accepts the Pitch
+ 
+1.  Sponsor clicks the link in their Ethereal email:
+http://localhost:5173/invite/abc123xyz...
+
+2.  React Router reads abc123xyz..., pings the Node server to validate it, and
+
+    displays the Diamond Package details.
+
+3.  Sponsor clicks "Accept Package".
+
+4.  React routes to the form step. Sponsor types in their Billing Address, VAT
+
+    number, and uploads their PNG logo.
+
+5.  Sponsor clicks "Submit".
+
+6.  Backend saves the image to an uploads/ folder, saves the form data to
+
+    SQLite, and updates the status.
+
+7.  React shows a Success Page. Admin can now open DB Browser (or their Admin
+
+    CMS) and see TechCorp's status as DETAILS_SUBMITTED.
+ 
+6. Recommended Development Phases
+ 
+  - Phase 1: Setup & Database (Day 1)
+
+      - Initialize the Node.js project. Install dependencies (express, sqlite,
+
+        sqlite3, cors, jsonwebtoken, nodemailer).
+
+      - Write the setup script to create sponsorship.db and the raw SQL tables.
+
+        Open DB Browser to verify.
+
+  - Phase 2: Admin Backend & Frontend (Day 2-3)
+
+      - Write Express routes for Admin Login, Packages, and Candidates.
+
+      - Initialize Vite + React + Tailwind.
+
+      - Build the Admin UI (Login screen, Dashboard sidebar, Data tables).
+
+        Connect to backend using axios or fetch.
+
+  - Phase 3: The Magic Engine (Day 4)
+
+      - Write the Express route that generates the crypto token and updates
+
+        SQLite.
+
+      - Implement Nodemailer with Ethereal. Ensure clicking the button in React
+
+        prints the Ethereal URL in the Node console.
+
+  - Phase 4: Sponsor UI & File Uploads (Day 5)
+
+      - Build the React frontend routes for /invite/:token.
+
+      - Build the Sponsor Form.
+
+      - Set up multer in Node.js to handle the form submission and logo image
+
+        saving.
+
+  - Phase 5: Polish & Test (Day 6)
+
+      - Add error handling (e.g., what happens if the magic link is expired?
+
+        Show a red error screen).
+
+      - Ensure Tailwind CSS looks good on mobile devices for the Sponsor UI.
+
+ 
+This is an incredible testing document. It reveals a highly mature, accessible,
+
+and responsive platform. By extracting the best features from your E2E test
+
+plan—such as Accessibility (A11y) matrixes, Live Updates (SSE), Responsive
+
+Table-to-Card switches, Draft Survival, and CSV/XLSX Imports—we can elevate the
+
+Sponsorship Platform from a basic CRUD app to an enterprise-grade product.
+ 
+Here is the Enhanced End-to-End Implementation Plan for the Sponsorship
+
+Management Platform, integrating the robust standards from your document while
+
+using your chosen stack (React + Vite, Node.js + Express, SQLite, Ethereal).
+ 
+🌟 Master Implementation Plan: Sponsorship Platform
+ 
+1. UI/UX & Accessibility Standards (The "Cross-Cutting" Core)
+ 
+Before building features, the frontend architecture (React + Tailwind) must
+
+support these global conditions:
+ 
+  - Theme Matrix: Native support for Light / Dark / System themes. In Dark mode,
+
+    brand colors shift to "pale" variants (e.g., pale purple for Admin, pale
+
+    gold for Sponsors) for legibility. No "light-only" flash on reload.
+
+  - Text-Size & Zoom: A global text-size control (Smallest, Default, Largest).
+
+    UI must intelligently stack (not cram) at Largest text size. Must
+
+    survive 200% browser zoom without horizontal scrolling.
+
+  - Reduced Motion: A global toggle. When ON, route transitions, modal fade-ins,
+
+    and carousel snaps become instant.
+
+  - Device Breakpoints:
+
+      - P / Pℓ (Phones): Hamburger menus, single-column forms, bottom horizontal
+
+        carousels.
+
+      - T / Tℓ (Tablets): Table-to-Card structural shifts, 2-column forms.
+
+      - L / D (Desktop): Full data tables, side-by-side sticky panels.
+ 
+2. Expanded Database Schema (SQLite)
+ 
+To support multi-event management, visibility toggles, and robust tracking.
+ 
+  - events: id, name, description, start_date, end_date, location, is_public.
+
+  - packages: id, event_id, name, price, benefits (JSON).
+
+  - candidates (The CRM): id, event_id, company_name, contact_email, status
+
+    (PENDING, INVITE_SENT, ACCEPTED, DECLINED, DETAILS_SUBMITTED), magic_token,
+
+    token_expires_at.
+
+  - sponsor_details: id, candidate_id, legal_name, billing_info, logo_file_path,
+
+    website_url, is_hidden_from_public (BOOLEAN).
+ 
+3. Backend API & Live Data Engine (Node.js + Express)
+ 
+  - Live Updates (Server-Sent Events - SSE): Instead of refreshing, the Admin
+
+    dashboard uses SSE. When a sponsor accepts a package or uploads their logo,
+
+    the Express server pushes an event to the React Admin app, updating the CRM
+
+    table and status counts live.
+
+  - Draft Survival (Auto-save): Endpoints to save partial sponsor forms. If a
+
+    sponsor closes the tab halfway through uploading their details, returning to
+
+    the magic link restores their typed data.
+
+  - Data Integrity (Safe Deletes): If an Admin deletes an event, a database
+
+    transaction ensures all associated packages, candidates, and uploaded logo
+
+    files (via multer) are safely wiped or archived without creating orphans.
+ 
+4. Admin CMS: Organizer Dashboard
+ 
+  - Multi-Event Dashboard: Admins see cards for each event showing status counts
+
+    (e.g., "10 Accepted, 5 Pending"). Clicking "More details" expands inline to
+
+    show venue/map and exact financial commits.
+
+  - Responsive CRM Roster:
+
+      - Desktop (L/D): Shows a full data table.
+
+      - Mobile/Tablet (P/T): Morphs into stacked cards with a dedicated "Sort &
+
+        Filter" dropdown.
+
+      - Live Search: Instant filtering by Name, Email, or Status ("Details
+
+        Submitted").
+
+  - CSV / XLSX Import & Export: Admins can bulk-import candidates from an Excel
+
+    sheet. The system validates emails, ignores blank rows, and reports exact
+
+    "imported/skipped" counts.
+
+  - Live Email Template Editor: When drafting an invite, the screen splits (or
+
+    tabs on mobile). Left side: Subject, custom message, and accent color
+
+    picker. Right side: Live Preview of the HTML email that updates ~0.4s after
+
+    the admin stops typing.
+
+  - Send Invites: Bulk "Send" action that pushes to Nodemailer/Ethereal and
+
+    reports success/fail counts.
+ 
+5. Sponsor Flow: The Client Experience
+ 
+  - Identity Mismatch Protection: If a user opens the magic link but their
+
+    current browser session belongs to a different email, display an amber
+
+    warning banner: "Sent to [email], but you are signed in as..."
+
+  - The Invite Card (/invite/:token):
+
+      - Displays Event Hero, Date, and Package Proposal.
+
+      - Floating Action Area: The "Accept" and "Decline" buttons float at the
+
+        bottom of the viewport so they are always visible, even if the proposal
+
+        is long.
+
+      - Decline triggers a friendly exit state; Accept triggers live SSE update
+
+        to admin and moves to the form.
+
+  - Responsive Onboarding Form:
+
+      - Desktop: 2-column layout (Form on left, Event/Package summary sticky on
+
+        right).
+
+      - Mobile: Single column, vertical stack.
+
+      - Fields for Bio, URLs, and File Uploads (Drag & Drop for Logos).
+
+  - Visibility Control: A toggle for the sponsor: "Hide my company from the
+
+    public event page" (Useful if they haven't finalized PR yet).
+ 
+6. The Public Event Page (/events/:id)
+ 
+  - Hero & Info: Shows Event details, Map, and Dates.
+
+  - Dynamic Sponsor Display (Responsive):
+
+      - Desktop (L/D): A sticky side-panel or CSS Grid showing Sponsors
+
+        categorized by Package Tier (e.g., Diamond sponsors get massive cards,
+
+        Silver get smaller list items).
+
+      - Mobile (P): Converts to a horizontal snapping carousel. Arrows snap
+
+        exactly to the edge of the sponsor cards. Vertical scrolling on the
+
+        carousel safely scrolls the whole page.
+
+  - Live Reflection: Only sponsors with is_hidden_from_public = false and status
+
+    = DETAILS_SUBMITTED appear here. If a sponsor deletes their logo or hits
+
+    "hide", they vanish from this page instantly.
+ 
+7. Step-by-Step Execution Order
+ 
+1.  Foundation (A11y & DB)
+
+      - Set up React/Vite with Tailwind. Build the Theme toggle (Light/Dark) and
+
+        Text-size context provider.
+
+      - Set up SQLite with events, packages, candidates, and sponsor_details
+
+        tables.
+
+2.  Admin Core & SSE
+
+      - Build Admin auth.
+
+      - Build the Express SSE endpoint (/api/admin/stream).
+
+      - Build the responsive CRM Roster (Table on desktop, Cards on mobile).
+
+3.  The Engine (Imports & Emails)
+
+      - Implement xlsx library in Node to parse Excel file uploads for mass
+
+        candidate generation.
+
+      - Build the Live Preview Email Editor and connect Nodemailer + Ethereal.
+
+4.  Sponsor Flow & Drafts
+
+      - Build the Magic Link validator.
+
+      - Build the Sponsor onboarding form with "Draft Survival" (auto-saving
+
+        onChange to localStorage or backend).
+
+      - Implement the floating Accept/Decline action area.
+
+5.  Public Page & Polish
+
+      - Build the Public Event page with the responsive sponsor carousels.
+
+      - Run the Accessibility Deep-Dive (Keyboard navigation, 200% zoom check,
+
+        screen-reader spot check).
+ 
+By treating Sponsors like your "Speakers" in the original document, this plan
+
+guarantees a product that is not only functional but highly resilient, visually
+
+flawless on all devices, and an absolute joy for event organizers to use.
+
+ 
