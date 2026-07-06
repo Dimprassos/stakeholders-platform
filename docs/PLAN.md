@@ -218,7 +218,11 @@ Sponsors  ─────▶ │ /sponsors                                      
 - ✅ D4 = SQLite; provider switched; first migration `init` applied + seed works
   (4 packages / 3 sponsors / 5 settings). *(SQLite has no enums/arrays → statuses
   are `String`, `benefits` is a JSON string.)*
-- ⏭️ **Next:** Packages page + Sponsors showcase (from DB) + interest form → candidate.
+- ✅ Public pages built + verified: `/packages` + `/sponsors` (from DB, only
+  `isPublished` shown, grouped by tier) + `/become-a-sponsor` (form → server
+  action → `Submission`, honeypot + validation + GDPR consent). Shared header/footer.
+- ⏭️ **Next (Phase 2):** Admin CMS — auth, dashboard, packages/sponsors CRUD,
+  submissions inbox.
 
 ### Phase 2 — Admin CMS core
 - Admin auth; dashboard; packages CRUD; candidate pipeline (CRM table);
