@@ -1,8 +1,8 @@
 "use client";
 
 import { useActionState } from "react";
-import { submitInterest } from "@/app/become-a-sponsor/actions";
-import { INITIAL_SUBMIT_STATE } from "@/app/become-a-sponsor/types";
+import { submitInterest } from "@/lib/interest/actions";
+import { INITIAL_SUBMIT_STATE } from "@/lib/interest/types";
 
 type PackageOption = { id: string; name: string; tier: string };
 

@@ -44,22 +44,37 @@ model Package {
 }
 
 /// A company in the funnel. Doubles as lead/prospect and confirmed sponsor
-/// via `status`; only `isPublished` ones appear on the public page.
+/// via `status`; only `isPublished && !isHiddenFromPublic` ones appear on the
+/// public page. Status pipeline (see docs/PLAN.md §8):
+///   LEAD -> INVITE_SENT -> ACCEPTED -> DETAILS_SUBMITTED -> CONFIRMED
+///        \-> DECLINED
 model Sponsor {
-  id           String   @id @default(cuid())
-  companyName  String
-  logoUrl      String?
-  websiteUrl   String?
-  description  String?
-  packageId    String?
-  package      Package? @relation(fields: [packageId], references: [id], onDelete: SetNull)
-  contactName  String?
-  contactEmail String?
-  status       String   @default("LEAD") // LEAD | CONTACTED | INTERESTED | CONFIRMED | DECLINED
-  isPublished  Boolean  @default(false)
-  displayOrder Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                 String    @id @default(cuid())
+  companyName        String
+  logoUrl            String?
+  websiteUrl         String?
+  description        String?
+  packageId          String?
+  package            Package?  @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  contactName        String?
+  contactEmail       String?
+  status             String    @default("LEAD") // LEAD | INVITE_SENT | ACCEPTED | DETAILS_SUBMITTED | CONFIRMED | DECLINED
+  isPublished        Boolean   @default(false)
+  isHiddenFromPublic Boolean   @default(false)
+  displayOrder       Int       @default(0)
+
+  // Magic-link outreach fields (used in Phase 3)
+  magicToken         String?   @unique
+  tokenIssuedAt      DateTime?
+  tokenExpiresAt     DateTime?
+
+  // Onboarding form fields (sponsor fills these after accepting)
+  legalName          String?
+  billingAddress     String?
+  vatNumber          String?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   outreach Outreach[]
 }

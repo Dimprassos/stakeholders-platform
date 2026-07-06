@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default async function SponsorsPage() {
   const sponsors = await prisma.sponsor.findMany({
-    where: { isPublished: true },
+    where: { isPublished: true, isHiddenFromPublic: false },
     include: { package: true },
     orderBy: { displayOrder: "asc" },
   });

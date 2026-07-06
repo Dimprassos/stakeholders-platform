@@ -1,8 +1,22 @@
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 async function main() {
+  // --- Admin user (CMS login) ---
+  // Default dev credentials: admin@stakeholders.local / admin1234
+  const passwordHash = await bcrypt.hash("admin1234", 10);
+  await prisma.user.upsert({
+    where: { email: "admin@stakeholders.local" },
+    update: { passwordHash },
+    create: {
+      email: "admin@stakeholders.local",
+      passwordHash,
+      role: "ADMIN",
+    },
+  });
+
   // --- Sponsorship packages / tiers ---
   // NOTE: SQLite has no array type, so `benefits` is stored as a JSON string.
   const tiers = [
@@ -91,9 +105,33 @@ async function main() {
       companyName: "Initech Grid",
       tier: "SILVER",
       websiteUrl: "https://example.com",
-      status: "INTERESTED",
+      status: "ACCEPTED", // mid-pipeline example (no longer published)
       isPublished: false,
       displayOrder: 3,
+    },
+    {
+      companyName: "Hooli Networks",
+      tier: "GOLD",
+      contactEmail: "partners@hooli.example",
+      status: "INVITE_SENT",
+      isPublished: false,
+      displayOrder: 4,
+    },
+    {
+      companyName: "Stark Industries",
+      tier: "PLATINUM",
+      contactEmail: "events@stark.example",
+      status: "DETAILS_SUBMITTED",
+      isPublished: false,
+      displayOrder: 5,
+    },
+    {
+      companyName: "Wayne Holdings",
+      tier: "BRONZE",
+      contactEmail: "pr@wayne.example",
+      status: "LEAD",
+      isPublished: false,
+      displayOrder: 6,
     },
   ];
 
@@ -118,13 +156,14 @@ async function main() {
     await prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } });
   }
 
-  const [pkgCount, sponsorCount, settingCount] = await Promise.all([
+  const [userCount, pkgCount, sponsorCount, settingCount] = await Promise.all([
+    prisma.user.count(),
     prisma.package.count(),
     prisma.sponsor.count(),
     prisma.setting.count(),
   ]);
   console.log(
-    `Seed complete: ${pkgCount} packages, ${sponsorCount} sponsors, ${settingCount} settings.`,
+    `Seed complete: ${userCount} admin, ${pkgCount} packages, ${sponsorCount} sponsors, ${settingCount} settings.`,
   );
 }
 
