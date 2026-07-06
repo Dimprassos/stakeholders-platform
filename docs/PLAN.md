@@ -215,8 +215,10 @@ Sponsors  ─────▶ │ /sponsors                                      
 - npm scripts (`dev`, `build`, `typecheck`, `db:*`); landing placeholder.
 
 ### Phase 1 — Database live + public pages
-- **Decide D4**, wire a real DB, run first migration + seed.
-- Packages page + Sponsors showcase (from DB) + interest form → candidate.
+- ✅ D4 = SQLite; provider switched; first migration `init` applied + seed works
+  (4 packages / 3 sponsors / 5 settings). *(SQLite has no enums/arrays → statuses
+  are `String`, `benefits` is a JSON string.)*
+- ⏭️ **Next:** Packages page + Sponsors showcase (from DB) + interest form → candidate.
 
 ### Phase 2 — Admin CMS core
 - Admin auth; dashboard; packages CRUD; candidate pipeline (CRM table);

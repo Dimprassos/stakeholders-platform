@@ -1,52 +1,25 @@
 // Prisma schema for the Sponsorship Platform
+// DB: SQLite (dev). NOTE: SQLite does not support Prisma enums or scalar lists,
+// so statuses/roles are String (allowed values in comments; validated in app
+// code) and `benefits` is stored as a JSON string. For production, switch the
+// provider to "postgresql" and these can become real enums/arrays.
 // Mirrors the data model in docs/PLAN.md §8.
-// Docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
-
-// ---------- Enums ----------
-
-enum Role {
-  ADMIN
-}
-
-enum SponsorStatus {
-  LEAD
-  CONTACTED
-  INTERESTED
-  CONFIRMED
-  DECLINED
-}
-
-enum SubmissionStatus {
-  NEW
-  REVIEWED
-  CONVERTED
-  SPAM
-}
-
-enum OutreachStatus {
-  DRAFT
-  SENT
-  BOUNCED
-  REPLIED
-}
-
-// ---------- Models ----------
 
 /// Admin / organizer accounts (CMS users).
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
-  role         Role     @default(ADMIN)
+  role         String   @default("ADMIN") // ADMIN
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
@@ -58,7 +31,7 @@ model Package {
   tier         String
   priceCents   Int
   currency     String   @default("EUR")
-  benefits     String[]
+  benefits     String   @default("[]") // JSON array of strings
   slotsTotal   Int?
   slotsTaken   Int      @default(0)
   displayOrder Int      @default(0)
@@ -73,37 +46,37 @@ model Package {
 /// A company in the funnel. Doubles as lead/prospect and confirmed sponsor
 /// via `status`; only `isPublished` ones appear on the public page.
 model Sponsor {
-  id           String        @id @default(cuid())
+  id           String   @id @default(cuid())
   companyName  String
   logoUrl      String?
   websiteUrl   String?
   description  String?
   packageId    String?
-  package      Package?      @relation(fields: [packageId], references: [id], onDelete: SetNull)
+  package      Package? @relation(fields: [packageId], references: [id], onDelete: SetNull)
   contactName  String?
   contactEmail String?
-  status       SponsorStatus @default(LEAD)
-  isPublished  Boolean       @default(false)
-  displayOrder Int           @default(0)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  status       String   @default("LEAD") // LEAD | CONTACTED | INTERESTED | CONFIRMED | DECLINED
+  isPublished  Boolean  @default(false)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   outreach Outreach[]
 }
 
 /// A public "Become a sponsor" interest-form submission.
 model Submission {
-  id                String           @id @default(cuid())
+  id                String   @id @default(cuid())
   companyName       String
   contactName       String
   email             String
   phone             String?
   packageInterestId String?
-  packageInterest   Package?         @relation(fields: [packageInterestId], references: [id], onDelete: SetNull)
+  packageInterest   Package? @relation(fields: [packageInterestId], references: [id], onDelete: SetNull)
   message           String?
-  consentGiven      Boolean          @default(false)
-  status            SubmissionStatus @default(NEW)
-  createdAt         DateTime         @default(now())
+  consentGiven      Boolean  @default(false)
+  status            String   @default("NEW") // NEW | REVIEWED | CONVERTED | SPAM
+  createdAt         DateTime @default(now())
 }
 
 /// A single outreach email sent (or drafted) to a prospect/sponsor.
@@ -116,7 +89,7 @@ model Outreach {
   template      EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   subject       String
   body          String
-  status        OutreachStatus @default(DRAFT)
+  status        String         @default("DRAFT") // DRAFT | SENT | BOUNCED | REPLIED
   sentAt        DateTime?
   createdAt     DateTime       @default(now())
 }

@@ -4,6 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   // --- Sponsorship packages / tiers ---
+  // NOTE: SQLite has no array type, so `benefits` is stored as a JSON string.
   const tiers = [
     {
       name: "Platinum",
@@ -51,10 +52,19 @@ async function main() {
 
   const packages: Record<string, string> = {};
   for (const t of tiers) {
+    const data = {
+      name: t.name,
+      tier: t.tier,
+      priceCents: t.priceCents,
+      currency: "EUR",
+      benefits: JSON.stringify(t.benefits), // stored as JSON text (SQLite)
+      slotsTotal: t.slotsTotal,
+      displayOrder: t.displayOrder,
+    };
     const pkg = await prisma.package.upsert({
       where: { id: t.tier }, // deterministic id so re-seeding is idempotent
-      update: t,
-      create: { id: t.tier, currency: "EUR", ...t },
+      update: data,
+      create: { id: t.tier, ...data },
     });
     packages[t.tier] = pkg.id;
   }
@@ -65,7 +75,7 @@ async function main() {
       companyName: "Acme Energy",
       tier: "PLATINUM",
       websiteUrl: "https://example.com",
-      status: "CONFIRMED" as const,
+      status: "CONFIRMED",
       isPublished: true,
       displayOrder: 1,
     },
@@ -73,7 +83,7 @@ async function main() {
       companyName: "Globex Power",
       tier: "GOLD",
       websiteUrl: "https://example.com",
-      status: "CONFIRMED" as const,
+      status: "CONFIRMED",
       isPublished: true,
       displayOrder: 2,
     },
@@ -81,7 +91,7 @@ async function main() {
       companyName: "Initech Grid",
       tier: "SILVER",
       websiteUrl: "https://example.com",
-      status: "INTERESTED" as const,
+      status: "INTERESTED",
       isPublished: false,
       displayOrder: 3,
     },
@@ -108,7 +118,14 @@ async function main() {
     await prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } });
   }
 
-  console.log("Seed complete: packages, sponsors, and settings inserted.");
+  const [pkgCount, sponsorCount, settingCount] = await Promise.all([
+    prisma.package.count(),
+    prisma.sponsor.count(),
+    prisma.setting.count(),
+  ]);
+  console.log(
+    `Seed complete: ${pkgCount} packages, ${sponsorCount} sponsors, ${settingCount} settings.`,
+  );
 }
 
 main()
