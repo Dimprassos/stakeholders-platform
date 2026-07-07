@@ -109,8 +109,9 @@ export default async function ProposalPage({
 
       <p className="mt-6 text-lg text-zinc-700 dark:text-zinc-300">
         Dear{sponsor!.contactName ? ` ${sponsor!.contactName}` : ""}, we&apos;d
-        love to have <strong>{sponsor!.companyName}</strong> on board. Below is
-        the package we&apos;re proposing. Review it and let us know.
+        love to have <strong>{sponsor!.companyName}</strong>{" "}
+        on board. Below is the package we&apos;re proposing. Review it and let
+        us know.
       </p>
 
       <section className="mt-10 rounded-2xl border border-black/10 p-8 dark:border-white/10">
