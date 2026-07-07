@@ -46,7 +46,7 @@ export default async function PackagesPage() {
                 <ul className="mt-4 space-y-2 text-sm text-zinc-600 dark:text-zinc-400">
                   {benefits.map((b) => (
                     <li key={b} className="flex gap-2">
-                      <span aria-hidden className="text-foreground">
+                      <span aria-hidden className="text-brand-accent">
                         ✓
                       </span>
                       <span>{b}</span>
@@ -62,7 +62,7 @@ export default async function PackagesPage() {
                   )}
                   <Link
                     href={`/become-a-sponsor?package=${pkg.id}`}
-                    className="inline-block rounded-full bg-foreground px-4 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+                    className="inline-block rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-ink transition-opacity hover:opacity-90"
                   >
                     Become a sponsor
                   </Link>

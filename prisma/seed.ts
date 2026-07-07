@@ -146,10 +146,11 @@ async function main() {
 
   // --- Event settings ---
   const settings: Record<string, string> = {
-    eventName: "Stakeholders Event 2026",
+    eventName: "Stakeholders Summit 2026",
+    tagline: "Where industry leaders and brands connect.",
     eventStartDate: "2026-10-21",
     eventEndDate: "2026-10-23",
-    venue: "Athens, Greece",
+    venue: "Megaron Athens, Greece",
     senderEmail: "sponsorships@example.com",
   };
   for (const [key, value] of Object.entries(settings)) {
