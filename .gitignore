@@ -22,6 +22,9 @@
 # production
 /build
 
+# uploaded files (dev logo uploads; prod uses object storage)
+/public/uploads/
+
 # misc
 .DS_Store
 *.pem
