@@ -4,11 +4,10 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { generateMagicToken, tokenExpiry } from "@/lib/magic-token";
 import { sendMail } from "@/lib/email";
+import { SITE_URL } from "@/lib/site";
 import { renderTemplate } from "@/lib/template";
 
 export type InviteState = { ok: boolean; message?: string; previewUrl?: string };
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
 function getSettingValue(
   settings: { key: string; value: string }[],
