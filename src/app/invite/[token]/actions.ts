@@ -133,6 +133,16 @@ export async function submitOnboardingAction(
   let logoUrl: string | null = data.logoUrl?.trim() || null;
   const logoFile = formData.get("logoFile");
   if (logoFile instanceof File && logoFile.size > 0) {
+    if (process.env.NODE_ENV === "production") {
+      return {
+        ok: false,
+        message: "Please fix the highlighted fields.",
+        errors: {
+          logoFile:
+            "Direct logo uploads are not enabled in production yet. Please paste a hosted logo URL.",
+        },
+      };
+    }
     if (!(logoFile.type in ALLOWED_LOGO_EXT)) {
       return {
         ok: false,

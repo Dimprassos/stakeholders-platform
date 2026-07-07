@@ -11,6 +11,12 @@
 > carousels, multi-event, full accessibility/text-size matrix) are **deferred**
 > to later optional phases.
 
+> **Current implementation note (2026-07-07):** The repo has advanced beyond this
+> planning snapshot. Phases 0-3 are implemented, Phase 4 UI polish/content is in
+> progress, and the remaining launch work is deployment prep: Postgres migration,
+> SMTP credentials, production URL/env vars, and a decision on production logo
+> storage. See [`docs/QA.md`](./QA.md) and [`docs/RELEASE.md`](./RELEASE.md).
+
 ---
 
 ## 1. One-line summary

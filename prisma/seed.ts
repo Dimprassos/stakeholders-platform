@@ -21,44 +21,53 @@ async function main() {
   // NOTE: SQLite has no array type, so `benefits` is stored as a JSON string.
   const tiers = [
     {
-      name: "Platinum",
+      name: "Founding Partner",
       tier: "PLATINUM",
-      priceCents: 1_000_000, // €10,000
+      priceCents: 1_200_000, // EUR 12,000
       benefits: [
-        "Prime logo placement on all event materials",
-        "Keynote speaking slot",
-        "Premium booth space",
-        "10 delegate passes",
+        "Exclusive category visibility across the summit",
+        "Opening keynote introduction or fireside chat",
+        "Premium lounge presence and lead capture",
+        "12 delegate passes plus VIP dinner access",
       ],
       slotsTotal: 1,
       displayOrder: 1,
     },
     {
-      name: "Gold",
+      name: "Strategic Partner",
       tier: "GOLD",
-      priceCents: 500_000, // €5,000
+      priceCents: 700_000, // EUR 7,000
       benefits: [
-        "Logo on event website and stage banner",
-        "Panel speaking slot",
-        "Standard booth space",
-        "5 delegate passes",
+        "Logo placement on website, stage loops and email campaigns",
+        "Panel seat with senior industry speakers",
+        "Dedicated meeting table in the partner area",
+        "7 delegate passes",
       ],
       slotsTotal: 3,
       displayOrder: 2,
     },
     {
-      name: "Silver",
+      name: "Community Partner",
       tier: "SILVER",
-      priceCents: 250_000, // €2,500
-      benefits: ["Logo on event website", "Shared booth space", "3 delegate passes"],
+      priceCents: 350_000, // EUR 3,500
+      benefits: [
+        "Logo on website and selected onsite signage",
+        "Shared demo point in the networking area",
+        "Mention in partner announcement posts",
+        "4 delegate passes",
+      ],
       slotsTotal: 6,
       displayOrder: 3,
     },
     {
-      name: "Bronze",
+      name: "Supporting Partner",
       tier: "BRONZE",
-      priceCents: 100_000, // €1,000
-      benefits: ["Logo on event website", "2 delegate passes"],
+      priceCents: 150_000, // EUR 1,500
+      benefits: [
+        "Logo on the sponsor showcase page",
+        "Inclusion in the partner thank-you email",
+        "2 delegate passes",
+      ],
       slotsTotal: 10,
       displayOrder: 4,
     },
@@ -84,51 +93,73 @@ async function main() {
   }
 
   // --- Sample sponsors (published showcase) ---
+  const legacySponsorIds = [
+    "Acme Energy",
+    "Globex Power",
+    "Initech Grid",
+    "Hooli Networks",
+    "Stark Industries",
+    "Wayne Holdings",
+  ];
+  await prisma.sponsor.deleteMany({ where: { id: { in: legacySponsorIds } } });
+
   const sponsors = [
     {
-      companyName: "Acme Energy",
+      id: "sponsor-helios-energy",
+      companyName: "Helios Energy Group",
       tier: "PLATINUM",
       websiteUrl: "https://example.com",
+      description: "Renewable infrastructure partner supporting the summit's leadership track.",
       status: "CONFIRMED",
       isPublished: true,
       displayOrder: 1,
     },
     {
-      companyName: "Globex Power",
+      id: "sponsor-aegean-ventures",
+      companyName: "Aegean Ventures",
       tier: "GOLD",
       websiteUrl: "https://example.com",
+      description: "Investment platform connecting growth companies with regional partners.",
       status: "CONFIRMED",
       isPublished: true,
       displayOrder: 2,
     },
     {
-      companyName: "Initech Grid",
+      id: "sponsor-attica-digital",
+      companyName: "Attica Digital",
       tier: "SILVER",
       websiteUrl: "https://example.com",
+      description: "Cloud and data partner for modern event and enterprise operations.",
       status: "ACCEPTED", // mid-pipeline example (no longer published)
       isPublished: false,
       displayOrder: 3,
     },
     {
-      companyName: "Hooli Networks",
+      id: "sponsor-orion-mobility",
+      companyName: "Orion Mobility",
       tier: "GOLD",
-      contactEmail: "partners@hooli.example",
+      contactEmail: "partners@orion.example",
+      description: "Mobility sponsor invited to support the networking programme.",
       status: "INVITE_SENT",
       isPublished: false,
       displayOrder: 4,
     },
     {
-      companyName: "Stark Industries",
+      id: "sponsor-nova-finance",
+      companyName: "Nova Finance",
       tier: "PLATINUM",
-      contactEmail: "events@stark.example",
+      contactEmail: "events@nova.example",
+      description: "Submitted onboarding details and awaiting final organizer approval.",
       status: "DETAILS_SUBMITTED",
       isPublished: false,
       displayOrder: 5,
     },
     {
-      companyName: "Wayne Holdings",
+      id: "sponsor-wayline-labs",
+      companyName: "Wayline Labs",
       tier: "BRONZE",
-      contactEmail: "pr@wayne.example",
+      contactEmail: "pr@wayline.example",
+      description: "Early-stage ecosystem supporter ready for outreach.",
       status: "LEAD",
       isPublished: false,
       displayOrder: 6,
@@ -136,21 +167,21 @@ async function main() {
   ];
 
   for (const s of sponsors) {
-    const { tier, ...rest } = s;
+    const { id, tier, ...rest } = s;
     await prisma.sponsor.upsert({
-      where: { id: s.companyName },
+      where: { id },
       update: { ...rest, packageId: packages[tier] },
-      create: { id: s.companyName, ...rest, packageId: packages[tier] },
+      create: { id, ...rest, packageId: packages[tier] },
     });
   }
 
   // --- Event settings ---
   const settings: Record<string, string> = {
     eventName: "Stakeholders Summit 2026",
-    tagline: "Where industry leaders and brands connect.",
+    tagline: "Three days of deal-making, brand visibility and senior stakeholder access.",
     eventStartDate: "2026-10-21",
     eventEndDate: "2026-10-23",
-    venue: "Megaron Athens, Greece",
+    venue: "Megaron Athens International Conference Centre",
     senderEmail: "sponsorships@example.com",
   };
   for (const [key, value] of Object.entries(settings)) {

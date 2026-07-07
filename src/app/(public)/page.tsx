@@ -10,6 +10,33 @@ export const metadata: Metadata = {
   alternates: { canonical: "/" },
 };
 
+const HIGHLIGHTS = [
+  { value: "4", label: "Partner tiers" },
+  { value: "3", label: "Summit days" },
+  { value: "Invite", label: "Curated sponsor flow" },
+];
+
+const CARDS = [
+  {
+    id: "audience-access",
+    title: "Audience access",
+    body: "Meet founders, operators, investors and institutional decision-makers in one focused room.",
+    href: "/packages",
+  },
+  {
+    id: "brand-visibility",
+    title: "Brand visibility",
+    body: "Choose from website, stage, email and onsite placements sized to your partnership goals.",
+    href: "/packages",
+  },
+  {
+    id: "start-conversation",
+    title: "Start the conversation",
+    body: "Tell us what you want to achieve and the organizer team will suggest the best-fit package.",
+    href: "/become-a-sponsor",
+  },
+];
+
 export default async function Home() {
   const event = await getEventSettings();
   const dateRange = formatDateRange(event.startDate, event.endDate);
@@ -17,47 +44,61 @@ export default async function Home() {
 
   return (
     <>
-      <section className="mx-auto max-w-3xl px-6 py-24 text-center sm:py-32">
-        {meta && (
-          <p className="text-sm font-medium uppercase tracking-wide text-brand-accent">
-            {meta}
-          </p>
-        )}
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-6xl">
-          {event.name}
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-zinc-600 dark:text-zinc-400">
-          {event.tagline} Put your brand in front of our audience — explore the sponsorship
-          packages and join us.
-        </p>
+      <section className="border-b border-black/10 dark:border-white/10">
+        <div className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
+          <div className="max-w-3xl">
+            {meta && (
+              <p className="text-sm font-medium uppercase tracking-wide text-brand-accent">
+                {meta}
+              </p>
+            )}
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-6xl">
+              {event.name}
+            </h1>
+            <p className="mt-6 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
+              {event.tagline} Build recognition with the decision-makers shaping the next
+              chapter of the market.
+            </p>
 
-        <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/packages"
-            className="rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-ink transition-opacity hover:opacity-90"
-          >
-            View packages
-          </Link>
-          <Link
-            href="/become-a-sponsor"
-            className="rounded-full border border-black/15 px-6 py-3 text-sm font-medium transition-colors hover:border-foreground dark:border-white/20"
-          >
-            Become a sponsor
-          </Link>
+            <div className="mt-10 flex flex-wrap items-center gap-3">
+              <Link
+                href="/packages"
+                className="rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-ink transition-opacity hover:opacity-90"
+              >
+                View packages
+              </Link>
+              <Link
+                href="/become-a-sponsor"
+                className="rounded-full border border-black/15 px-6 py-3 text-sm font-medium transition-colors hover:border-foreground dark:border-white/20"
+              >
+                Become a sponsor
+              </Link>
+            </div>
+          </div>
+
+          <dl className="mt-12 grid gap-3 sm:grid-cols-3">
+            {HIGHLIGHTS.map((item) => (
+              <div
+                key={item.label}
+                className="rounded-lg border border-black/10 px-4 py-3 dark:border-white/10"
+              >
+                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  {item.label}
+                </dt>
+                <dd className="mt-1 text-2xl font-semibold tracking-tight">{item.value}</dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[
-            { title: "Sponsorship packages", body: "Transparent tiers, benefits and pricing.", href: "/packages" },
-            { title: "Our sponsors", body: "See the partners already supporting the event.", href: "/sponsors" },
-            { title: "Get in touch", body: "Share your details and we'll reach out.", href: "/become-a-sponsor" },
-          ].map((c) => (
+        <div className="grid gap-4 pt-16 sm:grid-cols-3">
+          {CARDS.map((c) => (
             <Link
-              key={c.href}
+              key={c.id}
               href={c.href}
-              className="rounded-xl border border-black/10 p-6 transition-colors hover:border-foreground dark:border-white/10"
+              className="rounded-lg border border-black/10 p-6 transition-colors hover:border-brand-accent dark:border-white/10"
             >
               <h2 className="font-semibold">{c.title}</h2>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{c.body}</p>

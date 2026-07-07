@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Stakeholders Sponsorship Platform
 
-## Getting Started
+Next.js sponsorship platform for an event organizer and sponsor candidates.
 
-First, run the development server:
+Core flow:
+
+1. Admin manages packages and candidate sponsors.
+2. Admin sends a personal magic-link invite.
+3. Sponsor accepts or declines the proposal.
+4. Sponsor submits onboarding details.
+5. Admin confirms/publishes the sponsor.
+6. Published, non-hidden sponsors appear on the public sponsors page.
+
+## Local Development
 
 ```bash
+npm install
+cp .env.example .env
+npm run db:migrate
+npm run db:seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Default local admin:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- Email: `admin@stakeholders.local`
+- Password: `admin1234`
 
-## Learn More
+Local development uses SQLite via `prisma/schema.prisma`.
 
-To learn more about Next.js, take a look at the following resources:
+## Checks
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npx prisma validate
+env DATABASE_URL=postgresql://user:pass@localhost:5432/stakeholders npx prisma validate --schema prisma-postgres/schema.prisma
+npm run typecheck
+npm run lint
+npm run build
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`npm run build` needs network access while the app uses `next/font/google`.
 
-## Deploy on Vercel
+## Production Path
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Production is prepared for Neon/Postgres through a separate Prisma schema:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- SQLite local schema: `prisma/schema.prisma`
+- Postgres production schema: `prisma-postgres/schema.prisma`
+- Postgres migrations: `prisma-postgres/migrations`
+
+Useful production commands:
+
+```bash
+npm run db:migrate:postgres
+npm run db:seed:postgres
+npm run build:postgres
+```
+
+For Vercel, set the build command to `npm run build:postgres`.
+
+See [docs/QA.md](./docs/QA.md) and [docs/RELEASE.md](./docs/RELEASE.md).

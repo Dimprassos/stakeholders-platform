@@ -12,8 +12,10 @@ const errorClass = "mt-1 text-xs text-red-600 dark:text-red-400";
 export function OnboardingForm({
   token,
   initial,
+  allowFileUpload = true,
 }: {
   token: string;
+  allowFileUpload?: boolean;
   initial?: {
     legalName: string;
     billingAddress: string;
@@ -30,12 +32,7 @@ export function OnboardingForm({
   const errors = state.errors ?? {};
 
   return (
-    <form
-      action={formAction}
-      encType="multipart/form-data"
-      className="space-y-6"
-      noValidate
-    >
+    <form action={formAction} className="space-y-6" noValidate>
       <input type="hidden" name="token" value={token} />
 
       {state.message && (
@@ -102,30 +99,40 @@ export function OnboardingForm({
       </div>
 
       <div>
-        <label className={labelClass} htmlFor="logoFile">
+        <label className={labelClass} htmlFor={allowFileUpload ? "logoFile" : "logoUrl"}>
           Logo
         </label>
-        <input
-          id="logoFile"
-          name="logoFile"
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="mt-1 block w-full text-sm text-zinc-600 file:mr-3 file:rounded-full file:border-0 file:bg-foreground file:px-4 file:py-2 file:text-xs file:font-medium file:text-background hover:file:cursor-pointer hover:file:opacity-90 dark:text-zinc-400"
-        />
-        {errors.logoFile && <p className={errorClass}>{errors.logoFile}</p>}
-        <p className="mt-1 text-xs text-zinc-500">
-          PNG, JPG or WEBP, up to 2&nbsp;MB — or paste a hosted link below.
-        </p>
+        {allowFileUpload && (
+          <>
+            <input
+              id="logoFile"
+              name="logoFile"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className="mt-1 block w-full text-sm text-zinc-600 file:mr-3 file:rounded-full file:border-0 file:bg-foreground file:px-4 file:py-2 file:text-xs file:font-medium file:text-background hover:file:cursor-pointer hover:file:opacity-90 dark:text-zinc-400"
+            />
+            {errors.logoFile && <p className={errorClass}>{errors.logoFile}</p>}
+            <p className="mt-1 text-xs text-zinc-500">
+              PNG, JPG or WEBP, up to 2&nbsp;MB — or paste a hosted link below.
+            </p>
+          </>
+        )}
         <input
           id="logoUrl"
           name="logoUrl"
           type="url"
           aria-label="Logo URL (if already hosted online)"
           defaultValue={initial?.logoUrl ?? ""}
-          className={`${inputClass} mt-2`}
+          className={`${inputClass} ${allowFileUpload ? "mt-2" : "mt-1"}`}
           placeholder="https://example.com/logo.png"
         />
         {errors.logoUrl && <p className={errorClass}>{errors.logoUrl}</p>}
+        {!allowFileUpload && (
+          <p className="mt-1 text-xs text-zinc-500">
+            Paste a hosted PNG, JPG or WEBP logo URL. Direct uploads are disabled
+            on the production deployment until object storage is connected.
+          </p>
+        )}
       </div>
 
       <div>

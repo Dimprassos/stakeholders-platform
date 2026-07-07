@@ -74,14 +74,18 @@ export default async function OnboardingFormPage({
       </p>
 
       <div className="mt-10">
-        <OnboardingForm token={token} initial={{
-          legalName: sponsor.legalName ?? "",
-          billingAddress: sponsor.billingAddress ?? "",
-          vatNumber: sponsor.vatNumber ?? "",
-          websiteUrl: sponsor.websiteUrl ?? "",
-          logoUrl: sponsor.logoUrl ?? "",
-          description: sponsor.description ?? "",
-        }} />
+        <OnboardingForm
+          token={token}
+          allowFileUpload={process.env.NODE_ENV !== "production"}
+          initial={{
+            legalName: sponsor.legalName ?? "",
+            billingAddress: sponsor.billingAddress ?? "",
+            vatNumber: sponsor.vatNumber ?? "",
+            websiteUrl: sponsor.websiteUrl ?? "",
+            logoUrl: sponsor.logoUrl ?? "",
+            description: sponsor.description ?? "",
+          }}
+        />
       </div>
     </main>
   );
