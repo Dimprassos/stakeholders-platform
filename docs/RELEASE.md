@@ -26,6 +26,10 @@ Production deployment still needs provider setup and one infrastructure decision
 - `SMTP_PASS`: SMTP password/API key.
 - `NEXT_PUBLIC_SITE_URL`: deployed origin with no trailing slash.
 
+On Vercel, `VERCEL_URL` is used as a fallback for metadata URLs if
+`NEXT_PUBLIC_SITE_URL` is not set. Set `NEXT_PUBLIC_SITE_URL` when using a custom
+domain.
+
 ## Database Release Steps
 
 Local development uses `prisma/schema.prisma` with SQLite. Production uses the
