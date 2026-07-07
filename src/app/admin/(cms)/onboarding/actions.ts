@@ -20,6 +20,23 @@ export async function togglePublishAction(formData: FormData): Promise<void> {
   revalidatePath("/sponsors");
 }
 
+export async function toggleHiddenAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const sponsor = await prisma.sponsor.findUnique({
+    where: { id },
+    select: { isHiddenFromPublic: true },
+  });
+  if (!sponsor) return;
+  await prisma.sponsor.update({
+    where: { id },
+    data: { isHiddenFromPublic: !sponsor.isHiddenFromPublic },
+  });
+  revalidatePath("/admin/onboarding");
+  revalidatePath("/admin");
+  revalidatePath("/sponsors");
+}
+
 export async function confirmSponsorAction(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id) return;

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { togglePublishAction, confirmSponsorAction } from "./actions";
+import { togglePublishAction, confirmSponsorAction, toggleHiddenAction } from "./actions";
+import { ActionForm } from "../action-form";
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +83,7 @@ export default async function OnboardingReviewPage() {
                 </div>
 
                 <div className="mt-5 flex flex-wrap items-center gap-3">
-                  <form action={confirmSponsorAction}>
+                  <ActionForm action={confirmSponsorAction}>
                     <input type="hidden" name="id" value={s.id} />
                     <button
                       type="submit"
@@ -90,8 +91,8 @@ export default async function OnboardingReviewPage() {
                     >
                       Confirm &amp; publish
                     </button>
-                  </form>
-                  <form action={togglePublishAction}>
+                  </ActionForm>
+                  <ActionForm action={togglePublishAction}>
                     <input type="hidden" name="id" value={s.id} />
                     <button
                       type="submit"
@@ -99,7 +100,21 @@ export default async function OnboardingReviewPage() {
                     >
                       {s.isPublished ? "Unpublish" : "Publish only"}
                     </button>
-                  </form>
+                  </ActionForm>
+                  <ActionForm action={toggleHiddenAction}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <button
+                      type="submit"
+                      title="Whether this sponsor appears on the public sponsors page"
+                      className={`rounded-full border px-5 py-2 text-sm font-medium transition-colors ${
+                        s.isHiddenFromPublic
+                          ? "border-amber-300 bg-amber-100 text-amber-800 hover:bg-amber-200 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300"
+                          : "border-black/15 hover:border-foreground dark:border-white/20"
+                      }`}
+                    >
+                      {s.isHiddenFromPublic ? "Show on public site" : "Hide from public site"}
+                    </button>
+                  </ActionForm>
                 </div>
               </div>
             ))
@@ -128,12 +143,21 @@ export default async function OnboardingReviewPage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  {s.isHiddenFromPublic && (
-                    <span className="rounded-full bg-zinc-200 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400">
-                      Sponsor chose to hide
-                    </span>
-                  )}
-                  <form action={togglePublishAction}>
+                  <ActionForm action={toggleHiddenAction}>
+                    <input type="hidden" name="id" value={s.id} />
+                    <button
+                      type="submit"
+                      title="Whether this sponsor appears on the public sponsors page"
+                      className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                        s.isHiddenFromPublic
+                          ? "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-300"
+                          : "bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:text-green-400"
+                      }`}
+                    >
+                      {s.isHiddenFromPublic ? "Hidden" : "Visible"}
+                    </button>
+                  </ActionForm>
+                  <ActionForm action={togglePublishAction}>
                     <input type="hidden" name="id" value={s.id} />
                     <button
                       type="submit"
@@ -145,7 +169,7 @@ export default async function OnboardingReviewPage() {
                     >
                       {s.isPublished ? "Published" : "Unpublished"}
                     </button>
-                  </form>
+                  </ActionForm>
                   <Link
                     href="/sponsors"
                     className="text-xs text-zinc-500 underline underline-offset-4 hover:text-foreground"

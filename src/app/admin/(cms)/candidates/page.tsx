@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { AddCandidateForm } from "./add-candidate-form";
 import { SendInviteForm } from "./invite-button";
+import { ActionForm } from "../action-form";
 import {
   assignPackageAction,
   setStatusAction,
@@ -109,9 +110,10 @@ export default async function CandidatesPage({
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <form action={assignPackageAction} className="inline-block">
+                    <ActionForm action={assignPackageAction} className="inline-block">
                       <input type="hidden" name="id" value={s.id} />
                       <select
+                        key={s.packageId ?? "none"}
                         name="packageId"
                         defaultValue={s.packageId ?? ""}
                         className="rounded-md border border-black/15 bg-transparent px-2 py-1 text-xs dark:border-white/20"
@@ -129,12 +131,13 @@ export default async function CandidatesPage({
                       >
                         Set
                       </button>
-                    </form>
+                    </ActionForm>
                   </td>
                   <td className="px-4 py-3">
-                    <form action={setStatusAction} className="inline-flex items-center gap-2">
+                    <ActionForm action={setStatusAction} className="inline-flex items-center gap-2">
                       <input type="hidden" name="id" value={s.id} />
                       <select
+                        key={s.status}
                         name="status"
                         defaultValue={s.status}
                         className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
@@ -153,10 +156,10 @@ export default async function CandidatesPage({
                       >
                         Set
                       </button>
-                    </form>
+                    </ActionForm>
                   </td>
                   <td className="px-4 py-3">
-                    <form action={togglePublishAction}>
+                    <ActionForm action={togglePublishAction}>
                       <input type="hidden" name="id" value={s.id} />
                       <button
                         type="submit"
@@ -168,7 +171,7 @@ export default async function CandidatesPage({
                       >
                         {s.isPublished ? "Published" : "Hidden"}
                       </button>
-                    </form>
+                    </ActionForm>
                   </td>
                   <td className="px-4 py-3 text-zinc-500">
                     {s.createdAt.toLocaleDateString("en-GB", {
