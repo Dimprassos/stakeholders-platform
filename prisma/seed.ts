@@ -156,6 +156,43 @@ async function main() {
     await prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } });
   }
 
+  // --- Default email template (sponsor invite) ---
+  // Merge fields: {{companyName}}, {{packageName}}, {{event}}, {{link}}
+  await prisma.emailTemplate.upsert({
+    where: { id: "default-invite" },
+    update: {
+      name: "Sponsorship invite (default)",
+      subject: "Sponsorship invitation — {{event}}",
+      body: `Hello {{contactName}},
+
+{{event}} is approaching, and we'd love for {{companyName}} to join us as a {{packageName}} sponsor.
+
+You can review the package details and accept or decline here:
+{{link}}
+
+This link is personal to you and expires in 7 days.
+
+Kind regards,
+The organizers of {{event}}`,
+    },
+    create: {
+      id: "default-invite",
+      name: "Sponsorship invite (default)",
+      subject: "Sponsorship invitation — {{event}}",
+      body: `Hello {{contactName}},
+
+{{event}} is approaching, and we'd love for {{companyName}} to join us as a {{packageName}} sponsor.
+
+You can review the package details and accept or decline here:
+{{link}}
+
+This link is personal to you and expires in 7 days.
+
+Kind regards,
+The organizers of {{event}}`,
+    },
+  });
+
   const [userCount, pkgCount, sponsorCount, settingCount] = await Promise.all([
     prisma.user.count(),
     prisma.package.count(),

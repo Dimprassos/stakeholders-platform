@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { AddCandidateForm } from "./add-candidate-form";
+import { SendInviteForm } from "./invite-button";
 import {
   assignPackageAction,
   setStatusAction,
@@ -179,14 +180,21 @@ export default async function CandidatesPage({
                   {/* Onboarding details (legal name / VAT / etc) Phase 3 — for now just a link */}
                   <td className="px-4 py-3 text-right">
                     {s.status === "DETAILS_SUBMITTED" || s.status === "CONFIRMED" ? (
-                      <Link
-                        href={`/admin/onboarding?focus=${s.id}`}
-                        className="text-zinc-600 underline underline-offset-4 hover:text-foreground dark:text-zinc-400"
-                      >
-                        Review
-                      </Link>
+                      <div className="flex justify-end">
+                        <Link
+                          href={`/admin/onboarding?focus=${s.id}`}
+                          className="text-zinc-600 underline underline-offset-4 hover:text-foreground dark:text-zinc-400"
+                        >
+                          Review
+                        </Link>
+                      </div>
                     ) : (
-                      <span className="text-xs text-zinc-400">Send invite (Phase 3)</span>
+                      <div className="flex justify-end">
+                        <SendInviteForm
+                          sponsorId={s.id}
+                          disabled={!s.packageId || !s.contactEmail}
+                        />
+                      </div>
                     )}
                   </td>
                 </tr>
