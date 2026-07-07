@@ -1,4 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Partner with us",
+  description:
+    "Explore sponsorship packages, see who's already on board, and tell us you're interested — we'll take it from there.",
+  alternates: { canonical: "/" },
+};
 
 export default function Home() {
   return (

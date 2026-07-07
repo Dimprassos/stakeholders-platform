@@ -51,6 +51,8 @@ export default async function SponsorsPage() {
                         <img
                           src={s.logoUrl}
                           alt={s.companyName}
+                          loading="lazy"
+                          decoding="async"
                           className="max-h-12 max-w-full object-contain"
                         />
                       ) : (
