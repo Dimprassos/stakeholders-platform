@@ -5,6 +5,7 @@ import { parseBenefits } from "@/lib/format";
 import { formatPrice } from "@/lib/format";
 import { deletePackageAction, togglePackageActiveAction } from "./actions";
 import { slotsTakenByPackage } from "@/lib/slots";
+import { getAdminEventId } from "@/lib/event";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,7 @@ async function handleToggle(formData: FormData) {
 
 export default async function AdminPackagesPage() {
   const packages = await prisma.package.findMany({
+    where: { eventId: await getAdminEventId() },
     orderBy: { displayOrder: "asc" },
     include: { _count: { select: { sponsors: true } } },
   });

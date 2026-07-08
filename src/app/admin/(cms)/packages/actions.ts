@@ -4,7 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getCurrentEventId } from "@/lib/event";
+import { getAdminEventId } from "@/lib/event";
 import type { PackageFormState } from "./types";
 
 const PackageSchema = z.object({
@@ -76,7 +76,7 @@ export async function createPackageAction(
   try {
     await prisma.package.create({
       data: {
-        eventId: await getCurrentEventId(),
+        eventId: await getAdminEventId(),
         name: data.name,
         tier: data.tier,
         priceCents: Math.round(parseFloat(data.priceEuros) * 100),

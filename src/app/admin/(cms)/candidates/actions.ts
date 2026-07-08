@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isPackageFull, SLOT_HOLDING_STATUSES } from "@/lib/slots";
-import { getCurrentEventId } from "@/lib/event";
+import { getAdminEventId } from "@/lib/event";
 import type { CandidateFormState } from "./types";
 import { PIPELINE_STATUSES } from "./types";
 
@@ -53,7 +53,7 @@ export async function addCandidateAction(
   try {
     await prisma.sponsor.create({
       data: {
-        eventId: await getCurrentEventId(),
+        eventId: await getAdminEventId(),
         companyName: parsed.data.companyName,
         contactName: parsed.data.contactName || null,
         contactEmail: parsed.data.contactEmail || null,

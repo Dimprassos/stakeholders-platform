@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { listEvents, getAdminEvent } from "@/lib/event";
+import { EventSwitcher } from "./events/event-switcher";
 import { logoutAction } from "@/app/admin/login/actions";
 
 const NAV = [
   { href: "/admin", label: "Dashboard" },
+  { href: "/admin/events", label: "Events" },
   { href: "/admin/packages", label: "Packages" },
   { href: "/admin/candidates", label: "Candidates" },
   { href: "/admin/submissions", label: "Submissions" },
@@ -16,6 +20,14 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }>) {
   const session = await requireAdmin();
+  const [user, events, currentEvent] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.userId },
+      select: { email: true },
+    }),
+    listEvents(),
+    getAdminEvent(),
+  ]);
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
@@ -39,7 +51,15 @@ export default async function AdminLayout({
           </div>
 
           <div className="flex items-center gap-4 text-sm">
-            <span className="hidden text-xs text-zinc-500 sm:inline">{session.userId}</span>
+            {currentEvent && (
+              <EventSwitcher
+                events={events.map((e) => ({ id: e.id, name: e.name }))}
+                currentId={currentEvent.id}
+              />
+            )}
+            <span className="hidden text-xs text-zinc-500 sm:inline">
+              {user?.email ?? "Admin"}
+            </span>
             <form action={logoutAction}>
               <button
                 type="submit"

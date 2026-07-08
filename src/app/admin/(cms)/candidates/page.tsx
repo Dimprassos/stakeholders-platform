@@ -9,6 +9,7 @@ import {
   togglePublishAction,
 } from "./actions";
 import { PIPELINE_STATUSES } from "./types";
+import { getAdminEventId } from "@/lib/event";
 
 export const dynamic = "force-dynamic";
 
@@ -45,14 +46,15 @@ export default async function CandidatesPage({
   const validStatus =
     status && PIPELINE_STATUSES.includes(status as never) ? (status as string) : undefined;
 
+  const eventId = await getAdminEventId();
   const [sponsors, packages] = await Promise.all([
     prisma.sponsor.findMany({
-      where: validStatus ? { status: validStatus } : undefined,
+      where: { eventId, ...(validStatus ? { status: validStatus } : {}) },
       include: { package: true },
       orderBy: { createdAt: "desc" },
     }),
     prisma.package.findMany({
-      where: { isActive: true },
+      where: { isActive: true, eventId },
       orderBy: { displayOrder: "asc" },
       select: { id: true, name: true, tier: true },
     }),

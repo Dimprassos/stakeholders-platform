@@ -22,20 +22,21 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
 
 ---
 
-## Now / in progress
-- **Phase A (multi-event) — Step 1 DONE locally & verified** (Claude, 2026-07-08).
-  New `Event` model; `eventId` on Package/Sponsor/Submission/EmailTemplate/Outreach;
-  `Setting` table dropped (event identity now on `Event`); `src/lib/event.ts` exposes
-  `getCurrentEvent/getCurrentEventId/getEventSettings` (default event for now). Migration
-  `20260708113333_multi_event_foundation` (sqlite) + seed create a default event.
-  Verified: typecheck/lint green; public + invite + admin-login render; invite shows the
-  event name from `Event`. **App behaves identically (single default event); query
-  scoping + admin switcher = Step 2.**
-- ⚠️ **NOT push-safe yet.** The app now requires `Event`, but `prisma-postgres/schema.prisma`
-  still lacks it → a push would **fail the Vercel `build:postgres`** (and Neon has no
-  Event table). Prod part (mirror postgres schema + Neon migration with backfill) is a
-  dedicated next step. **Recommend: work the multi-event feature on a branch, or hold the
-  push to `main`, until the prod migration is done.**
+## Now / in progress (branch `multi-event-foundation`)
+- ✅ **Phase A Step 1** (committed) — `Event` model + `eventId` on all funnel entities;
+  `Setting` dropped (identity on `Event`); migration `20260708113333_multi_event_foundation`;
+  seed makes a default event.
+- ✅ **Phase A Step 2 — query-scoping + admin event switcher** (Claude, 2026-07-08). Public
+  pages scope to the default event (`getCurrentEventId`); admin pages/creates scope to the
+  selected event (`getAdminEventId`, `admin_event` cookie). New `/admin/events` (list /
+  create / switch / make-default) + header **event switcher**. Verified: typecheck/lint;
+  **event isolation** — a 2nd event's package/sponsor does NOT leak to public `/packages`,
+  `/sponsors`, `/become-a-sponsor`. Admin switcher UI = **your browser test** (behind login).
+- ⏭️ **Step 3** — public per-slug events (`/e/[slug]/…`) if we want multiple public events
+  (currently public = default event only).
+- ⚠️ **Still NOT push-safe.** `prisma-postgres/schema.prisma` lacks `Event` → a push fails
+  the Vercel `build:postgres`. Prod = mirror postgres schema + Neon migration (backfill).
+  Do it before merging to `main`.
 
 ## Next up (from PLAN.md — reorder as you like)
 1. **Email deliverability — permanent fix (optional upgrade).** Invites now send via a

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { getAdminEventId } from "@/lib/event";
 
 export const dynamic = "force-dynamic";
 
@@ -22,17 +23,19 @@ function formatDate(value: Date): string {
 }
 
 export default async function AdminDashboardPage() {
+  const eventId = await getAdminEventId();
   const [statusGroups, submissions, packageCount, publishedCount, submissionCount] =
     await Promise.all([
-      prisma.sponsor.groupBy({ by: ["status"], _count: true }),
+      prisma.sponsor.groupBy({ by: ["status"], _count: true, where: { eventId } }),
       prisma.submission.findMany({
+        where: { eventId },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: { packageInterest: { select: { name: true } } },
       }),
-      prisma.package.count(),
-      prisma.sponsor.count({ where: { isPublished: true } }),
-      prisma.submission.count(),
+      prisma.package.count({ where: { eventId } }),
+      prisma.sponsor.count({ where: { eventId, isPublished: true } }),
+      prisma.submission.count({ where: { eventId } }),
     ]);
 
   const counts = new Map<string, number>(

@@ -48,10 +48,12 @@ export async function submitInterest(
     return { ok: false, message: "Please fix the highlighted fields.", errors };
   }
 
-  // Only keep the package reference if it points to a real package.
+  const eventId = await getCurrentEventId();
+
+  // Only keep the package reference if it points to a real package in this event.
   if (packageInterestId) {
-    const exists = await prisma.package.findUnique({
-      where: { id: packageInterestId },
+    const exists = await prisma.package.findFirst({
+      where: { id: packageInterestId, eventId },
       select: { id: true },
     });
     if (!exists) packageInterestId = "";
@@ -60,7 +62,7 @@ export async function submitInterest(
   try {
     await prisma.submission.create({
       data: {
-        eventId: await getCurrentEventId(),
+        eventId,
         companyName,
         contactName,
         email,

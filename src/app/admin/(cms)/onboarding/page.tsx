@@ -2,6 +2,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { togglePublishAction, confirmSponsorAction, toggleHiddenAction } from "./actions";
 import { ActionForm } from "../action-form";
+import { getAdminEventId } from "@/lib/event";
 
 export const dynamic = "force-dynamic";
 
@@ -15,14 +16,15 @@ function Detail({ label, value }: { label: string; value: string | null | undefi
 }
 
 export default async function OnboardingReviewPage() {
+  const eventId = await getAdminEventId();
   const [pending, reviewed] = await Promise.all([
     prisma.sponsor.findMany({
-      where: { status: "DETAILS_SUBMITTED" },
+      where: { eventId, status: "DETAILS_SUBMITTED" },
       include: { package: true },
       orderBy: { updatedAt: "desc" },
     }),
     prisma.sponsor.findMany({
-      where: { status: "CONFIRMED" },
+      where: { eventId, status: "CONFIRMED" },
       include: { package: true },
       orderBy: { displayOrder: "asc" },
     }),

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { InterestForm } from "@/components/interest-form";
+import { getCurrentEventId } from "@/lib/event";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function BecomeSponsorPage({
   const { package: packageId } = await searchParams;
 
   const packages = await prisma.package.findMany({
-    where: { isActive: true },
+    where: { isActive: true, eventId: await getCurrentEventId() },
     orderBy: { displayOrder: "asc" },
     select: { id: true, name: true, tier: true },
   });

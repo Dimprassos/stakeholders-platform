@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { convertSubmissionAction, markSubmissionReviewedAction } from "./actions";
+import { getAdminEventId } from "@/lib/event";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ const STATUS_TONE: Record<string, string> = {
 
 export default async function SubmissionsPage() {
   const submissions = await prisma.submission.findMany({
+    where: { eventId: await getAdminEventId() },
     orderBy: { createdAt: "desc" },
     include: { packageInterest: { select: { name: true } } },
   });

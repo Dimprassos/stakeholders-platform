@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatPrice, parseBenefits, tierLabel } from "@/lib/format";
 import { slotsTakenByPackage } from "@/lib/slots";
+import { getCurrentEventId } from "@/lib/event";
 
 export const dynamic = "force-dynamic";
 
@@ -54,7 +55,7 @@ function tierStyle(tier: string) {
 
 export default async function PackagesPage() {
   const packages = await prisma.package.findMany({
-    where: { isActive: true },
+    where: { isActive: true, eventId: await getCurrentEventId() },
     orderBy: { displayOrder: "asc" },
   });
   const takenByPackage = await slotsTakenByPackage(packages.map((p) => p.id));

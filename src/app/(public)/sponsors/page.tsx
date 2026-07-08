@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { tierLabel, tierRank } from "@/lib/format";
+import { getCurrentEventId } from "@/lib/event";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +30,12 @@ export default async function SponsorsPage() {
   const sponsors = await prisma.sponsor.findMany({
     // Defense in depth: only CONFIRMED sponsors can ever appear publicly, even
     // if `isPublished` was somehow set on an earlier-stage record.
-    where: { status: "CONFIRMED", isPublished: true, isHiddenFromPublic: false },
+    where: {
+      eventId: await getCurrentEventId(),
+      status: "CONFIRMED",
+      isPublished: true,
+      isHiddenFromPublic: false,
+    },
     include: { package: true },
     orderBy: { displayOrder: "asc" },
   });

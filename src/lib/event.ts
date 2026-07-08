@@ -1,6 +1,10 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+
+/** Cookie holding the admin's currently-selected event id. */
+export const ADMIN_EVENT_COOKIE = "admin_event";
 
 export type EventSettings = {
   name: string;
@@ -29,6 +33,36 @@ export const getCurrentEventId = cache(async (): Promise<string> => {
     throw new Error(
       "No event found — run `npm run db:seed` to create the default event.",
     );
+  }
+  return event.id;
+});
+
+/** All events, default first. */
+export const listEvents = cache(async () => {
+  return prisma.event.findMany({
+    orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
+  });
+});
+
+/**
+ * The event the admin is currently working in — from the `admin_event` cookie,
+ * falling back to the default event. Admin CMS pages/actions scope by this.
+ */
+export const getAdminEvent = cache(async () => {
+  const store = await cookies();
+  const id = store.get(ADMIN_EVENT_COOKIE)?.value;
+  if (id) {
+    const ev = await prisma.event.findUnique({ where: { id } });
+    if (ev) return ev;
+  }
+  return getCurrentEvent();
+});
+
+/** The admin's current event id. Throws if the DB has no event (run the seed). */
+export const getAdminEventId = cache(async (): Promise<string> => {
+  const event = await getAdminEvent();
+  if (!event) {
+    throw new Error("No event found — run `npm run db:seed`.");
   }
   return event.id;
 });

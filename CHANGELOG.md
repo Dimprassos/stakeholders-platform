@@ -1,5 +1,6 @@
 # All commits shown here from last to first.
-ed1cd73 (HEAD -> main, origin/main) bug: published state not logical, fixed it and added 3 layers of protection
+50cdb86 (HEAD -> main, origin/main) feat: validation polish
+ed1cd73 bug: published state not logical, fixed it and added 3 layers of protection
 809bcca fixed a bug where slots wouldnt decrease when selected, added extra layer
 d4f449e final: prod ready after smoke test
 6c0270c agents refactoring
