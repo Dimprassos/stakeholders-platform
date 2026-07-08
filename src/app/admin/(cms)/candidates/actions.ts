@@ -78,22 +78,31 @@ export async function setStatusAction(formData: FormData): Promise<void> {
   if (!id) return;
   if (!PIPELINE_STATUSES.includes(status as never)) return;
 
-  // Slot guard: moving a candidate into a holding status must not over-book a
-  // full package (a slot is held by every status except LEAD / DECLINED).
-  if (SLOT_HOLDING_STATUSES.includes(status)) {
-    const sponsor = await prisma.sponsor.findUnique({
-      where: { id },
-      select: { packageId: true, package: { select: { name: true } } },
-    });
-    if (
-      sponsor?.packageId &&
-      (await isPackageFull(sponsor.packageId, id))
-    ) {
-      slotFullRedirect(sponsor.package?.name ?? "package");
-    }
+  const sponsor = await prisma.sponsor.findUnique({
+    where: { id },
+    select: { status: true, packageId: true, package: { select: { name: true } } },
+  });
+  if (!sponsor) return;
+
+  // Slot guard: only a transition that NEWLY occupies a slot (from a non-holding
+  // LEAD/DECLINED into a holding status) can over-book. Shuffling an existing
+  // holder between holding statuses doesn't consume an extra slot, so allow it.
+  const newlyHolds =
+    !SLOT_HOLDING_STATUSES.includes(sponsor.status) &&
+    SLOT_HOLDING_STATUSES.includes(status);
+  if (
+    newlyHolds &&
+    sponsor.packageId &&
+    (await isPackageFull(sponsor.packageId, id))
+  ) {
+    slotFullRedirect(sponsor.package?.name ?? "package");
   }
 
-  await prisma.sponsor.update({ where: { id }, data: { status } });
+  await prisma.sponsor.update({
+    where: { id },
+    // Leaving CONFIRMED must not leave a stale public listing behind.
+    data: status === "CONFIRMED" ? { status } : { status, isPublished: false },
+  });
   revalidatePath("/admin/candidates");
   revalidatePath("/admin");
   revalidatePath("/sponsors");
@@ -104,15 +113,17 @@ export async function assignPackageAction(formData: FormData): Promise<void> {
   const packageId = String(formData.get("packageId") ?? "");
   if (!id) return;
 
-  // Slot guard: only relevant when the candidate already holds a slot (an
-  // untouched LEAD / DECLINED one can be parked on any package freely).
+  // Slot guard: only when an existing slot-holder moves onto a DIFFERENT, full
+  // package (re-selecting the same package is a no-op; an untouched LEAD /
+  // DECLINED one can be parked on any package freely).
   if (packageId) {
     const sponsor = await prisma.sponsor.findUnique({
       where: { id },
-      select: { status: true },
+      select: { status: true, packageId: true },
     });
     if (
       sponsor &&
+      sponsor.packageId !== packageId &&
       SLOT_HOLDING_STATUSES.includes(sponsor.status) &&
       (await isPackageFull(packageId, id))
     ) {
@@ -136,9 +147,15 @@ export async function togglePublishAction(formData: FormData): Promise<void> {
   if (!id) return;
   const sponsor = await prisma.sponsor.findUnique({
     where: { id },
-    select: { isPublished: true },
+    select: { isPublished: true, status: true },
   });
   if (!sponsor) return;
+
+  // Only a CONFIRMED sponsor may be published. Un-publishing is always allowed.
+  if (!sponsor.isPublished && sponsor.status !== "CONFIRMED") {
+    redirect("/admin/candidates?publishNeedsConfirm=1");
+  }
+
   await prisma.sponsor.update({
     where: { id },
     data: { isPublished: !sponsor.isPublished },

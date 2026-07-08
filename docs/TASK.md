@@ -54,16 +54,23 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
    `src/app/invite/[token]/actions.ts`. `PLAN.md §5 D9`. Only if paste-URL isn't enough.
 
 ## Discovered during work
-- **Package slots didn't work** (Dimitris, 2026-07-08: put 2 Founding Partners in a
-  1-slot package). Root cause: `Package.slotsTaken` was never written by any code path
-  (stuck at 0) and no limit was enforced. **Fixed** (pending your browser click-test of
-  the block UI): new `src/lib/slots.ts` derives taken counts live (holding = every
-  status except LEAD/DECLINED) + hard-block enforcement in `sendInviteAction`,
-  `setStatusAction`, `assignPackageAction`. Display now derived on `/packages`, invite
-  page, admin packages. Verified: DB logic + all display sites; typecheck/lint green.
+- ~~Package slots didn't work~~ **shipped** `809bcca` (derived counter + hard-block).
   Note: `slotsTaken` column now vestigial (left to avoid a 2-schema migration).
-- **Form validation polish (VAT/ΑΦΜ + phone + max-length caps)** — proposed, **parked**
-  until slots is committed. VAT approach TBD (Greek checksum / EU generic / smart).
+- **Slot guard over-blocked status changes** (Dimitris, 2026-07-08: couldn't change a
+  CONFIRMED sponsor's status). The guard fired on *any* move into a holding status, so
+  an existing holder on a full package (the seed over-books Founding Partner 2/1) got
+  blocked. **Fixed**: guard now only fires on a **non-holding → holding** transition
+  (new slot consumed); `assignPackage` skips same-package no-ops. Root cause confirmed
+  via DB diagnostic; typecheck/lint green — pending your re-test.
+- **Publish only when Confirmed** (Dimitris, 2026-07-08) — publishing was allowed on any
+  status and the public `/sponsors` query didn't require CONFIRMED → non-confirmed
+  sponsors could leak publicly. **Fixed** (pending your browser click-test of the admin
+  UI): (1) `/sponsors` query now requires `status: "CONFIRMED"` — **verified** a
+  force-published INVITE_SENT sponsor stays hidden; (2) `togglePublishAction` refuses to
+  publish unless CONFIRMED; (3) admin Published toggle disabled unless CONFIRMED;
+  (4) leaving CONFIRMED auto-unpublishes. typecheck/lint green.
+- **Form validation polish (VAT/ΑΦΜ + phone + max-length caps)** — proposed, **parked**.
+  VAT approach TBD (Greek checksum / EU generic / smart).
 
 ## Blocked / decisions pending
 - Email permanent fix waits on a **domain purchase** — your call; optional for now.

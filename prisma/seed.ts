@@ -147,7 +147,7 @@ async function main() {
     {
       id: "sponsor-nova-finance",
       companyName: "Nova Finance",
-      tier: "PLATINUM",
+      tier: "SILVER",
       contactEmail: "events@nova.example",
       description: "Submitted onboarding details and awaiting final organizer approval.",
       status: "DETAILS_SUBMITTED",

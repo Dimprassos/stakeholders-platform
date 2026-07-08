@@ -27,7 +27,9 @@ function sponsorInitials(name: string): string {
 
 export default async function SponsorsPage() {
   const sponsors = await prisma.sponsor.findMany({
-    where: { isPublished: true, isHiddenFromPublic: false },
+    // Defense in depth: only CONFIRMED sponsors can ever appear publicly, even
+    // if `isPublished` was somehow set on an earlier-stage record.
+    where: { status: "CONFIRMED", isPublished: true, isHiddenFromPublic: false },
     include: { package: true },
     orderBy: { displayOrder: "asc" },
   });

@@ -35,9 +35,13 @@ const STATUS_TONE: Record<string, string> = {
 export default async function CandidatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; slotFull?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    slotFull?: string;
+    publishNeedsConfirm?: string;
+  }>;
 }) {
-  const { status, slotFull } = await searchParams;
+  const { status, slotFull, publishNeedsConfirm } = await searchParams;
   const validStatus =
     status && PIPELINE_STATUSES.includes(status as never) ? (status as string) : undefined;
 
@@ -72,6 +76,13 @@ export default async function CandidatesPage({
         <p className="rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">
           <strong>{slotFull}</strong> is fully booked — that change was not applied.
           Free a slot (decline / reset a candidate) or choose another package.
+        </p>
+      )}
+
+      {publishNeedsConfirm && (
+        <p className="rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+          Only <strong>Confirmed</strong> sponsors can be published — set the status to
+          Confirmed first.
         </p>
       )}
 
@@ -166,19 +177,28 @@ export default async function CandidatesPage({
                     </ActionForm>
                   </td>
                   <td className="px-4 py-3">
-                    <ActionForm action={togglePublishAction}>
-                      <input type="hidden" name="id" value={s.id} />
-                      <button
-                        type="submit"
-                        className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
-                          s.isPublished
-                            ? "bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:text-green-400"
-                            : "bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
-                        }`}
+                    {s.status === "CONFIRMED" ? (
+                      <ActionForm action={togglePublishAction}>
+                        <input type="hidden" name="id" value={s.id} />
+                        <button
+                          type="submit"
+                          className={`rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors ${
+                            s.isPublished
+                              ? "bg-green-600/10 text-green-700 hover:bg-green-600/20 dark:text-green-400"
+                              : "bg-zinc-200 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400"
+                          }`}
+                        >
+                          {s.isPublished ? "Published" : "Hidden"}
+                        </button>
+                      </ActionForm>
+                    ) : (
+                      <span
+                        title="Confirm this sponsor before publishing"
+                        className="cursor-not-allowed rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600"
                       >
-                        {s.isPublished ? "Published" : "Hidden"}
-                      </button>
-                    </ActionForm>
+                        Hidden
+                      </span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-zinc-500">
                     {s.createdAt.toLocaleDateString("en-GB", {

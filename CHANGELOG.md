@@ -1,5 +1,6 @@
 # All commits shown here from last to first.
-d4f449e (HEAD -> main, origin/main) final: prod ready after smoke test
+809bcca (HEAD -> main, origin/main)bug: fixed a bug where slots wouldnt decrease when selected, added extra layer
+d4f449e final: prod ready after smoke test
 6c0270c agents refactoring
 6aa70c5 fix: add missing space before "on board" in invite greeting
 436ed1b fix: use shared Vercel-aware SITE_URL for invite links
