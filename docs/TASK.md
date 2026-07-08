@@ -23,6 +23,10 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
 ---
 
 ## Now / in progress (branch `multi-event-foundation`)
+> Working the **v2 Roadmap** from `PLAN.md §16` (built from your `QA.md` feedback,
+> 2026-07-08). Decided: build real features (not a thin subset), multi-event **IN**,
+> priority order → **Phase A first** (below), see "Queued" for B–G.
+
 - ✅ **Phase A Step 1** (committed) — `Event` model + `eventId` on all funnel entities;
   `Setting` dropped (identity on `Event`); migration `20260708113333_multi_event_foundation`;
   seed makes a default event.
@@ -34,9 +38,37 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
   `/sponsors`, `/become-a-sponsor`. Admin switcher UI = **your browser test** (behind login).
 - ⏭️ **Step 3** — public per-slug events (`/e/[slug]/…`) if we want multiple public events
   (currently public = default event only).
-- ⚠️ **Still NOT push-safe.** `prisma-postgres/schema.prisma` lacks `Event` → a push fails
-  the Vercel `build:postgres`. Prod = mirror postgres schema + Neon migration (backfill).
-  Do it before merging to `main`.
+- ✅ **Prod migration DONE** (Dimitris ran it, 2026-07-08): hand-written
+  `prisma-postgres/migrations/20260708120000_multi_event_foundation/` (nullable →
+  backfill → NOT NULL, so it's safe on existing rows) — creates `Event`, seeds one
+  default event **from the existing `Setting` values** (so nothing was lost), backfills
+  `eventId` on every row, drops `Setting`. Applied to Neon via `npm run db:migrate:postgres`
+  — "All migrations have been successfully applied." Structurally verified beforehand
+  against `prisma migrate diff` (1:1 match).
+- ✅ **Found + fixed a real (pre-existing) bug while dry-running the Vercel build:**
+  `(public)/page.tsx` was the only public page missing `export const dynamic =
+  "force-dynamic"` → Next tried to statically prerender `/` at **build time**, hitting
+  Prisma before any DB is configured. Fixed to match every sibling page. **Verified:**
+  ran the exact Vercel command (`npm run build:postgres`) locally end-to-end — compiles,
+  typechecks, all routes render correctly (`/` now `ƒ` dynamic) — strong confidence the
+  Vercel deploy will succeed. Restored local sqlite client after (`npm run db:generate`);
+  typecheck/lint green; local dev server healthy.
+- **Branch is now push-safe** (pending a final review pass before merge to `main`).
+
+## Queued — v2 Roadmap phases B–G (`PLAN.md §16.2`, after Phase A)
+> Full detail (capability map + tags) lives in `PLAN.md §16.1`; this is just the
+> phase order so it's visible without opening PLAN.md.
+
+- **Phase B** 🟢 — event content & branding: rich event fields (FAQ, deadlines,
+  terms, privacy/cancellation policy, social, map, currency, language) + B&W/custom
+  theme + logo/banner/hero.
+- **Phase C** 🟢🟡 — CRM depth: sponsor profile + organizer notes, deliverables
+  checklist (logo/banner/video/booth received…), task management.
+- **Phase D** 🟡🔴 — communication: inbound email replies/threads, notifications
+  & reminders, then chat.
+- **Phase E** 🔴 — sponsor accounts & portal (login, dashboard, status tracking).
+- **Phase F** 🔴 — payments & contracts (Stripe, invoices/receipts, e-signature).
+- **Phase G** 🟡 — analytics (conversion funnel, revenue, pending, unread, availability).
 
 ## Next up (from PLAN.md — reorder as you like)
 1. **Email deliverability — permanent fix (optional upgrade).** Invites now send via a

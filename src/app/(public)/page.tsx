@@ -3,6 +3,8 @@ import Link from "next/link";
 import { getEventSettings } from "@/lib/event";
 import { formatDateRange } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Partner with us",
   description:
