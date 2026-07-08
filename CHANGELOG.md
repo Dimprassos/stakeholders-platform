@@ -1,4 +1,6 @@
 # All commits shown here from last to first.
+
+main branch:
 50cdb86 (HEAD -> main, origin/main) feat: validation polish
 ed1cd73 bug: published state not logical, fixed it and added 3 layers of protection
 809bcca fixed a bug where slots wouldnt decrease when selected, added extra layer
@@ -17,3 +19,8 @@ af1dcf1 feat: SEO metadata, robots/sitemap, a11y landmarks and responsive header
 bcf3cb8 feat: public packages, sponsors showcase and interest form
 41e146d feat: switch DB to SQLite, add first migration + seed
 3e63603 first commit- phase 0 completed
+
+multi-event foundation:
+81c4054 (HEAD -> multi-event-foundation) feat: mirror multi-event schema to Postgres + fix homepage build-time prerender (Phase A prod)
+bbdee9c feat: multi-event query-scoping + admin event switcher (Phase A step 2)
+833c29c feat: multi-event foundation — Event model + eventId scoping (Phase A step 1)
