@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { isTokenExpired } from "@/lib/magic-token";
+import { getEventSettings } from "@/lib/event";
 import { OnboardingForm } from "../onboarding-form";
 
 export const dynamic = "force-dynamic";
@@ -56,9 +57,7 @@ export default async function OnboardingFormPage({
     );
   }
 
-  const settings = await prisma.setting.findMany();
-  const event =
-    settings.find((s) => s.key === "eventName")?.value ?? "the event";
+  const { name: event } = await getEventSettings();
 
   return (
     <main className="mx-auto max-w-2xl px-6 py-16">

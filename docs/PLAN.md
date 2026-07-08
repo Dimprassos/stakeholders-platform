@@ -301,3 +301,70 @@ Sponsors  ─────▶ │ /sponsors                                      
 3. Is there a specific **event** (name/dates/venue) to seed into settings?
 4. Do you have **branding** (logo/colors) or should we propose a look?
 5. Any existing **prospect list** to add as candidates later?
+
+---
+
+## 16. v2 Roadmap — Sponsor CRM expansion (stakeholder feedback)
+
+> **Source:** stakeholder feedback captured in [`docs/QA.md`](./QA.md), 2026-07-08.
+> **Scope shift:** from a v1 *sponsor-registration flow* → a full **Sponsor CRM /
+> Management Portal** covering the whole sponsorship lifecycle (first contact →
+> event completion). This section is a **roadmap for review** — nothing here is
+> committed to build yet; we pick 1–2 items to start.
+
+**Legend:** ✅ exists · 🟢 quick win (contained) · 🟡 medium · 🔴 major subsystem.
+
+### 16.1 Capability map (feedback → current state)
+
+| Capability | Tag | Notes / current state |
+|---|---|---|
+| Two registration paths (public form + personalized email link) | ✅ | `Submission` form + magic-link invite already do this |
+| Application workflow states | ✅/🟢 | pipeline `LEAD→INVITE_SENT→ACCEPTED→DETAILS_SUBMITTED→CONFIRMED/DECLINED`; can add Review/Rejected/Waiting-for-payment/Active |
+| Package select + slots + logo upload | ✅ | done |
+| Email templates + send log | ⚠️ | `EmailTemplate` + `Outreach` exist (outbound only) |
+| **Event branding** (B&W / custom + logo + banner/hero) | 🟢 | new; no `Event` model yet (single event via `Setting`) |
+| **Rich event fields** (desc, times, map, website, social, contact, language, currency, deadlines, FAQ, terms, privacy/cancellation policy) | 🟢 | new; mostly content fields |
+| **Deliverables tracking** (logo/banner/video/booth/speaker/social received) | 🟢 | new; checklist per sponsor |
+| **Sponsor profile** (contacts, history, past sponsorships, organizer notes) | 🟢 | new; extend `Sponsor` |
+| **Analytics dashboard** (funnel, revenue, pending, unread, availability) | 🟡 | new; some counts derivable already |
+| **Document repository** (Prospectus, Contracts, Invoices, PDFs) | 🟡 | new; needs object storage (see D9) |
+| **Notifications & reminders** (deadlines, payments, new messages) | 🟡 | new |
+| **Task management** ("send logo", deadlines) | 🟡 | new |
+| **Email Center — inbound replies + threads** | 🔴 | new; needs inbound mail handling |
+| **Multi-event** (everything scoped to `eventId`) | 🔴 | **foundational** — add `Event` model; scope Package/Sponsor/Submission/Template/Outreach/Settings by event |
+| **Sponsor accounts / portal login** | 🔴 | new; today sponsors are magic-link only, no accounts |
+| **Chat** (sponsor ↔ organizer, real-time) | 🔴 | new |
+| **Payments** (online, invoices, receipts, balance, history) | 🔴 | new; needs a provider (Stripe) |
+| **Contracts + e-signature** (send / accept / sign) | 🔴 | new |
+
+### 16.2 Proposed phasing (priority order)
+
+> **Gate first:** **Phase A (multi-event)** is foundational — if the product needs
+> multiple events, do it before the rest (it changes the schema everywhere and is
+> painful to retrofit). If the demo stays single-event, skip A and start at B.
+
+- **Phase A — Multi-event foundation** 🔴 *(decision pending)*
+  `Event` model; scope all entities by `eventId`; admin event switcher.
+- **Phase B — Event content & branding** 🟢 *(cheap, high-visibility)*
+  rich event fields + B&W/custom theme + logo/banner/hero.
+- **Phase C — CRM depth** 🟢🟡
+  sponsor profile + organizer notes; deliverables checklist; task management.
+- **Phase D — Communication** 🟡🔴
+  inbound email replies + threads; notifications/reminders; then chat.
+- **Phase E — Sponsor accounts & portal** 🔴
+  account/login, portal dashboard, application-status tracking.
+- **Phase F — Payments & contracts** 🔴
+  Stripe payments + invoices/receipts; contracts + e-signature.
+- **Phase G — Analytics** 🟡
+  conversion funnel, revenue, pending payments, unread, availability.
+
+### 16.3 Recommended demo subset (if staying "demo")
+
+Highest value-per-effort, builds on what exists: **B (branding + event fields)**,
+**C (deliverables + sponsor notes)**, and a slice of **G (basic funnel/revenue
+dashboard)**. Defer the 🔴 subsystems (multi-event, accounts, payments, chat,
+e-signature) unless the demo specifically must show them.
+
+> **Decided 2026-07-08 (Dimitris):** more than a thin demo subset — build real,
+> working features in phases. **Multi-event is IN**, and we proceed in **priority
+> order → Phase A (multi-event) first**, then B, C, … See §16.4 for the Phase A plan.

@@ -23,7 +23,19 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
 ---
 
 ## Now / in progress
-- _(nothing mid-change — working tree is clean apart from docs housekeeping)_
+- **Phase A (multi-event) — Step 1 DONE locally & verified** (Claude, 2026-07-08).
+  New `Event` model; `eventId` on Package/Sponsor/Submission/EmailTemplate/Outreach;
+  `Setting` table dropped (event identity now on `Event`); `src/lib/event.ts` exposes
+  `getCurrentEvent/getCurrentEventId/getEventSettings` (default event for now). Migration
+  `20260708113333_multi_event_foundation` (sqlite) + seed create a default event.
+  Verified: typecheck/lint green; public + invite + admin-login render; invite shows the
+  event name from `Event`. **App behaves identically (single default event); query
+  scoping + admin switcher = Step 2.**
+- ⚠️ **NOT push-safe yet.** The app now requires `Event`, but `prisma-postgres/schema.prisma`
+  still lacks it → a push would **fail the Vercel `build:postgres`** (and Neon has no
+  Event table). Prod part (mirror postgres schema + Neon migration with backfill) is a
+  dedicated next step. **Recommend: work the multi-event feature on a branch, or hold the
+  push to `main`, until the prod migration is done.**
 
 ## Next up (from PLAN.md — reorder as you like)
 1. **Email deliverability — permanent fix (optional upgrade).** Invites now send via a
@@ -54,6 +66,9 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
    `src/app/invite/[token]/actions.ts`. `PLAN.md §5 D9`. Only if paste-URL isn't enough.
 
 ## Discovered during work
+- **Admin header showed a raw CUID** (Dimitris, 2026-07-08) — top-right rendered
+  `session.userId` (the JWT only carries `userId`/`role`). **Fixed**: layout now fetches
+  and shows the admin's **email** (`admin/(cms)/layout.tsx`). typecheck/lint green.
 - ~~Package slots didn't work~~ **shipped** `809bcca` (derived counter + hard-block).
   Note: `slotsTaken` column now vestigial (left to avoid a 2-schema migration).
 - **Slot guard over-blocked status changes** (Dimitris, 2026-07-08: couldn't change a

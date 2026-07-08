@@ -3,7 +3,7 @@
 // so statuses/roles are String (allowed values in comments; validated in app
 // code) and `benefits` is stored as a JSON string. For production, switch the
 // provider to "postgresql" and these can become real enums/arrays.
-// Mirrors the data model in docs/PLAN.md §8.
+// Mirrors the data model in docs/PLAN.md §8 (multi-event: §16 Phase A).
 
 generator client {
   provider = "prisma-client-js"
@@ -24,9 +24,36 @@ model User {
   updatedAt    DateTime @updatedAt
 }
 
+/// A sponsorship event / edition. Everything below (packages, sponsors,
+/// submissions, templates, outreach) is scoped to one Event. One event is
+/// flagged `isDefault` and drives the public site + the admin's current event.
+/// (Multi-event foundation — docs/PLAN.md §16 Phase A.)
+model Event {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  name        String
+  tagline     String?
+  startDate   String? // ISO date string (e.g. 2026-10-21)
+  endDate     String?
+  venue       String?
+  senderEmail String?
+  isDefault   Boolean  @default(false)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  packages    Package[]
+  sponsors    Sponsor[]
+  submissions Submission[]
+  templates   EmailTemplate[]
+  outreach    Outreach[]
+}
+
 /// A sponsorship package / tier shown on the public packages page.
 model Package {
   id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   name         String
   tier         String
   priceCents   Int
@@ -41,6 +68,8 @@ model Package {
 
   sponsors    Sponsor[]
   submissions Submission[]
+
+  @@index([eventId])
 }
 
 /// A company in the funnel. Doubles as lead/prospect and confirmed sponsor
@@ -50,6 +79,8 @@ model Package {
 ///        \-> DECLINED
 model Sponsor {
   id                 String    @id @default(cuid())
+  eventId            String
+  event              Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
   companyName        String
   logoUrl            String?
   websiteUrl         String?
@@ -77,11 +108,15 @@ model Sponsor {
   updatedAt          DateTime  @updatedAt
 
   outreach Outreach[]
+
+  @@index([eventId])
 }
 
 /// A public "Become a sponsor" interest-form submission.
 model Submission {
   id                String   @id @default(cuid())
+  eventId           String
+  event             Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   companyName       String
   contactName       String
   email             String
@@ -92,11 +127,15 @@ model Submission {
   consentGiven      Boolean  @default(false)
   status            String   @default("NEW") // NEW | REVIEWED | CONVERTED | SPAM
   createdAt         DateTime @default(now())
+
+  @@index([eventId])
 }
 
 /// A single outreach email sent (or drafted) to a prospect/sponsor.
 model Outreach {
   id            String         @id @default(cuid())
+  eventId       String
+  event         Event          @relation(fields: [eventId], references: [id], onDelete: Cascade)
   sponsorId     String?
   sponsor       Sponsor?       @relation(fields: [sponsorId], references: [id], onDelete: SetNull)
   prospectEmail String?
@@ -107,11 +146,15 @@ model Outreach {
   status        String         @default("DRAFT") // DRAFT | SENT | BOUNCED | REPLIED
   sentAt        DateTime?
   createdAt     DateTime       @default(now())
+
+  @@index([eventId])
 }
 
 /// Reusable email template with merge fields (rendered at send time).
 model EmailTemplate {
   id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   name      String
   subject   String
   body      String
@@ -119,10 +162,6 @@ model EmailTemplate {
   updatedAt DateTime @updatedAt
 
   outreach Outreach[]
-}
 
-/// Simple key/value store for event/site settings (name, dates, venue, sender).
-model Setting {
-  key   String @id
-  value String
+  @@index([eventId])
 }

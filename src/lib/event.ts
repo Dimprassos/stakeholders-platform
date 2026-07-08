@@ -10,21 +10,41 @@ export type EventSettings = {
   venue: string | null;
 };
 
-const KEYS = ["eventName", "tagline", "eventStartDate", "eventEndDate", "venue"] as const;
+/**
+ * The "current" event. For now this resolves to the default event; the
+ * multi-event switcher (docs/PLAN.md §16 Phase A, a later step) will make it
+ * dynamic (per admin selection / public slug). Cached per request.
+ */
+export const getCurrentEvent = cache(async () => {
+  return (
+    (await prisma.event.findFirst({ where: { isDefault: true } })) ??
+    (await prisma.event.findFirst({ orderBy: { createdAt: "asc" } }))
+  );
+});
+
+/** The current event's id. Throws if the DB has no event (run the seed). */
+export const getCurrentEventId = cache(async (): Promise<string> => {
+  const event = await getCurrentEvent();
+  if (!event) {
+    throw new Error(
+      "No event found — run `npm run db:seed` to create the default event.",
+    );
+  }
+  return event.id;
+});
 
 /**
- * Reads the public-facing event identity from the `Setting` table.
+ * Reads the public-facing event identity from the current Event.
  * Cached per-request so header, footer and page can each call it without
- * duplicating the query. Falls back to demo defaults if a key is missing.
+ * duplicating the query. Falls back to demo defaults if no event exists.
  */
 export const getEventSettings = cache(async (): Promise<EventSettings> => {
-  const rows = await prisma.setting.findMany({ where: { key: { in: [...KEYS] } } });
-  const map = new Map(rows.map((r) => [r.key, r.value]));
+  const event = await getCurrentEvent();
   return {
-    name: map.get("eventName") ?? "Stakeholders Summit 2026",
-    tagline: map.get("tagline") ?? "Where industry leaders and brands connect.",
-    startDate: map.get("eventStartDate") ?? null,
-    endDate: map.get("eventEndDate") ?? null,
-    venue: map.get("venue") ?? null,
+    name: event?.name ?? "Stakeholders Summit 2026",
+    tagline: event?.tagline ?? "Where industry leaders and brands connect.",
+    startDate: event?.startDate ?? null,
+    endDate: event?.endDate ?? null,
+    venue: event?.venue ?? null,
   };
 });

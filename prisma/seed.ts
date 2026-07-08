@@ -17,6 +17,24 @@ async function main() {
     },
   });
 
+  // --- Default event (multi-event foundation, PLAN §16 Phase A) ---
+  const eventData = {
+    name: "Stakeholders Summit 2026",
+    tagline: "Where industry leaders and brands connect.",
+    startDate: "2026-10-21",
+    endDate: "2026-10-23",
+    venue: "Megaron Athens International Conference Centre",
+    senderEmail: "sponsorships@example.com",
+    isDefault: true,
+    isActive: true,
+  };
+  const event = await prisma.event.upsert({
+    where: { slug: "stakeholders-summit-2026" },
+    update: eventData,
+    create: { slug: "stakeholders-summit-2026", ...eventData },
+  });
+  const eventId = event.id;
+
   // --- Sponsorship packages / tiers ---
   // NOTE: SQLite has no array type, so `benefits` is stored as a JSON string.
   const tiers = [
@@ -76,6 +94,7 @@ async function main() {
   const packages: Record<string, string> = {};
   for (const t of tiers) {
     const data = {
+      eventId,
       name: t.name,
       tier: t.tier,
       priceCents: t.priceCents,
@@ -170,29 +189,19 @@ async function main() {
     const { id, tier, ...rest } = s;
     await prisma.sponsor.upsert({
       where: { id },
-      update: { ...rest, packageId: packages[tier] },
-      create: { id, ...rest, packageId: packages[tier] },
+      update: { ...rest, packageId: packages[tier], eventId },
+      create: { id, ...rest, packageId: packages[tier], eventId },
     });
   }
 
-  // --- Event settings ---
-  const settings: Record<string, string> = {
-    eventName: "Stakeholders Summit 2026",
-    tagline: "Three days of deal-making, brand visibility and senior stakeholder access.",
-    eventStartDate: "2026-10-21",
-    eventEndDate: "2026-10-23",
-    venue: "Megaron Athens International Conference Centre",
-    senderEmail: "sponsorships@example.com",
-  };
-  for (const [key, value] of Object.entries(settings)) {
-    await prisma.setting.upsert({ where: { key }, update: { value }, create: { key, value } });
-  }
+  // (Event identity — name, tagline, dates, venue — now lives on the Event above.)
 
   // --- Default email template (sponsor invite) ---
   // Merge fields: {{companyName}}, {{packageName}}, {{event}}, {{link}}
   await prisma.emailTemplate.upsert({
     where: { id: "default-invite" },
     update: {
+      eventId,
       name: "Sponsorship invite (default)",
       subject: "Sponsorship invitation — {{event}}",
       body: `Hello {{contactName}},
@@ -209,6 +218,7 @@ The organizers of {{event}}`,
     },
     create: {
       id: "default-invite",
+      eventId,
       name: "Sponsorship invite (default)",
       subject: "Sponsorship invitation — {{event}}",
       body: `Hello {{contactName}},
@@ -225,14 +235,13 @@ The organizers of {{event}}`,
     },
   });
 
-  const [userCount, pkgCount, sponsorCount, settingCount] = await Promise.all([
+  const [userCount, pkgCount, sponsorCount] = await Promise.all([
     prisma.user.count(),
     prisma.package.count(),
     prisma.sponsor.count(),
-    prisma.setting.count(),
   ]);
   console.log(
-    `Seed complete: ${userCount} admin, ${pkgCount} packages, ${sponsorCount} sponsors, ${settingCount} settings.`,
+    `Seed complete: 1 event, ${userCount} admin, ${pkgCount} packages, ${sponsorCount} sponsors.`,
   );
 }
 

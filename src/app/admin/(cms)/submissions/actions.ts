@@ -13,6 +13,7 @@ export async function convertSubmissionAction(formData: FormData): Promise<void>
   await prisma.$transaction([
     prisma.sponsor.create({
       data: {
+        eventId: submission.eventId,
         companyName: submission.companyName,
         contactName: submission.contactName,
         contactEmail: submission.email,

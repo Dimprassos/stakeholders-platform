@@ -7,16 +7,9 @@ import { sendMail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { renderTemplate } from "@/lib/template";
 import { isPackageFull } from "@/lib/slots";
+import { getEventSettings } from "@/lib/event";
 
 export type InviteState = { ok: boolean; message?: string; previewUrl?: string };
-
-function getSettingValue(
-  settings: { key: string; value: string }[],
-  key: string,
-  fallback = "",
-): string {
-  return settings.find((s) => s.key === key)?.value ?? fallback;
-}
 
 export async function sendInviteAction(
   sponsorId: string,
@@ -54,8 +47,7 @@ export async function sendInviteAction(
   const issuedAt = new Date();
   const expiresAt = tokenExpiry(issuedAt);
 
-  const settings = await prisma.setting.findMany();
-  const event = getSettingValue(settings, "eventName", "our event");
+  const { name: event } = await getEventSettings();
 
   const link = `${SITE_URL}/invite/${token}`;
   const fields: Record<string, string> = {
@@ -104,6 +96,7 @@ export async function sendInviteAction(
     }),
     prisma.outreach.create({
       data: {
+        eventId: sponsor.eventId,
         sponsorId,
         templateId: template?.id ?? null,
         prospectEmail: sponsor.contactEmail,

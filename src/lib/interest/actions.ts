@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { LIMITS, isValidPhone, normalizePhone } from "@/lib/validation";
+import { getCurrentEventId } from "@/lib/event";
 import type { SubmitState } from "./types";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -59,6 +60,7 @@ export async function submitInterest(
   try {
     await prisma.submission.create({
       data: {
+        eventId: await getCurrentEventId(),
         companyName,
         contactName,
         email,

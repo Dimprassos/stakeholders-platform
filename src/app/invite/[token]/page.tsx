@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice, parseBenefits } from "@/lib/format";
 import { isTokenExpired } from "@/lib/magic-token";
 import { slotsTaken } from "@/lib/slots";
+import { getEventSettings } from "@/lib/event";
 import { acceptAction, declineAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -36,12 +37,7 @@ export default async function ProposalPage({
   });
 
   const invalid = !sponsor || isTokenExpired(sponsor.tokenExpiresAt);
-  const settings = await prisma.setting.findMany();
-  const event =
-    settings.find((s) => s.key === "eventName")?.value ?? "our event";
-  const venue = settings.find((s) => s.key === "venue")?.value;
-  const startDate = settings.find((s) => s.key === "eventStartDate")?.value;
-  const endDate = settings.find((s) => s.key === "eventEndDate")?.value;
+  const { name: event, venue, startDate, endDate } = await getEventSettings();
 
   if (invalid) {
     return (
