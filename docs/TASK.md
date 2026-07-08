@@ -69,8 +69,13 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
   force-published INVITE_SENT sponsor stays hidden; (2) `togglePublishAction` refuses to
   publish unless CONFIRMED; (3) admin Published toggle disabled unless CONFIRMED;
   (4) leaving CONFIRMED auto-unpublishes. typecheck/lint green.
-- **Form validation polish (VAT/ΑΦΜ + phone + max-length caps)** — proposed, **parked**.
-  VAT approach TBD (Greek checksum / EU generic / smart).
+- **Form validation polish (VAT/ΑΦΜ + phone + max-length caps)** — **implemented**
+  (pending your browser check). New `src/lib/validation.ts`: phone (international E.164-ish
+  + normalize), VAT **smart** (Greek ΑΦΜ mod-11 checksum for bare-9-digit / EL·GR, generic
+  format for other EU), plus length caps. Wired into the interest form (`src/lib/interest`
+  + `interest-form.tsx`) and onboarding (`invite/[token]/actions.ts` + `onboarding-form.tsx`)
+  with inline errors + `maxLength`/`inputMode`/placeholders. Verified: 19/20 unit checks
+  (the 1 fail was a typo in the test's expected value); typecheck/lint green.
 
 ## Blocked / decisions pending
 - Email permanent fix waits on a **domain purchase** — your call; optional for now.

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { submitOnboardingAction } from "./actions";
 import { INITIAL_ONBOARDING_STATE } from "./types";
+import { LIMITS } from "@/lib/validation";
 
 const inputClass =
   "w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground dark:border-white/20";
@@ -49,6 +50,7 @@ export function OnboardingForm({
           id="legalName"
           name="legalName"
           defaultValue={initial?.legalName ?? ""}
+          maxLength={LIMITS.legalName}
           className={inputClass}
           required
         />
@@ -64,6 +66,7 @@ export function OnboardingForm({
           name="billingAddress"
           rows={3}
           defaultValue={initial?.billingAddress ?? ""}
+          maxLength={LIMITS.billingAddress}
           className={inputClass}
           required
         />
@@ -73,14 +76,18 @@ export function OnboardingForm({
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label className={labelClass} htmlFor="vatNumber">
-            VAT number
+            VAT number / ΑΦΜ
           </label>
           <input
             id="vatNumber"
             name="vatNumber"
             defaultValue={initial?.vatNumber ?? ""}
-            className={inputClass}
+            maxLength={LIMITS.vatNumber}
+            autoCapitalize="characters"
+            placeholder="123456789 or EL123456789"
+            className={`${inputClass} uppercase placeholder:normal-case`}
           />
+          {errors.vatNumber && <p className={errorClass}>{errors.vatNumber}</p>}
         </div>
         <div>
           <label className={labelClass} htmlFor="websiteUrl">
@@ -91,6 +98,7 @@ export function OnboardingForm({
             name="websiteUrl"
             type="url"
             defaultValue={initial?.websiteUrl ?? ""}
+            maxLength={LIMITS.websiteUrl}
             className={inputClass}
             placeholder="https://example.com"
           />
@@ -144,6 +152,7 @@ export function OnboardingForm({
           name="description"
           rows={3}
           defaultValue={initial?.description ?? ""}
+          maxLength={LIMITS.description}
           className={inputClass}
         />
       </div>

@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { submitInterest } from "@/lib/interest/actions";
 import { INITIAL_SUBMIT_STATE } from "@/lib/interest/types";
+import { LIMITS } from "@/lib/validation";
 
 type PackageOption = { id: string; name: string; tier: string };
 
@@ -56,7 +57,13 @@ export function InterestForm({
           <label className={labelClass} htmlFor="companyName">
             Company name *
           </label>
-          <input id="companyName" name="companyName" className={inputClass} required />
+          <input
+            id="companyName"
+            name="companyName"
+            maxLength={LIMITS.companyName}
+            className={inputClass}
+            required
+          />
           {errors.companyName && <p className={errorClass}>{errors.companyName}</p>}
         </div>
 
@@ -64,7 +71,13 @@ export function InterestForm({
           <label className={labelClass} htmlFor="contactName">
             Your name *
           </label>
-          <input id="contactName" name="contactName" className={inputClass} required />
+          <input
+            id="contactName"
+            name="contactName"
+            maxLength={LIMITS.contactName}
+            className={inputClass}
+            required
+          />
           {errors.contactName && <p className={errorClass}>{errors.contactName}</p>}
         </div>
 
@@ -72,7 +85,14 @@ export function InterestForm({
           <label className={labelClass} htmlFor="email">
             Email *
           </label>
-          <input id="email" name="email" type="email" className={inputClass} required />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            maxLength={LIMITS.email}
+            className={inputClass}
+            required
+          />
           {errors.email && <p className={errorClass}>{errors.email}</p>}
         </div>
 
@@ -80,7 +100,17 @@ export function InterestForm({
           <label className={labelClass} htmlFor="phone">
             Phone
           </label>
-          <input id="phone" name="phone" type="tel" className={inputClass} />
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            inputMode="tel"
+            autoComplete="tel"
+            maxLength={LIMITS.phone}
+            placeholder="+30 69XXXXXXXX"
+            className={inputClass}
+          />
+          {errors.phone && <p className={errorClass}>{errors.phone}</p>}
         </div>
       </div>
 
@@ -107,7 +137,14 @@ export function InterestForm({
         <label className={labelClass} htmlFor="message">
           Message
         </label>
-        <textarea id="message" name="message" rows={4} className={inputClass} />
+        <textarea
+          id="message"
+          name="message"
+          rows={4}
+          maxLength={LIMITS.message}
+          className={inputClass}
+        />
+        {errors.message && <p className={errorClass}>{errors.message}</p>}
       </div>
 
       <div>

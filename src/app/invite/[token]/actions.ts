@@ -7,6 +7,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isTokenExpired } from "@/lib/magic-token";
+import { LIMITS, isValidVat, normalizeVat } from "@/lib/validation";
 import type { OnboardingState } from "./types";
 
 // Logo uploads (dev): stored under public/uploads/logos and served statically.
@@ -29,15 +30,30 @@ async function saveLogoFile(file: File, sponsorId: string): Promise<string> {
 }
 
 const OnboardingSchema = z.object({
-  legalName: z.string().min(1, { message: "Legal name is required." }),
-  billingAddress: z.string().min(1, { message: "Billing address is required." }),
-  vatNumber: z.string().optional(),
+  legalName: z
+    .string()
+    .min(1, { message: "Legal name is required." })
+    .max(LIMITS.legalName, { message: "Legal name is too long." }),
+  billingAddress: z
+    .string()
+    .min(1, { message: "Billing address is required." })
+    .max(LIMITS.billingAddress, { message: "Billing address is too long." }),
+  vatNumber: z
+    .string()
+    .max(LIMITS.vatNumber, { message: "VAT number is too long." })
+    .refine(isValidVat, {
+      message: "Enter a valid VAT number / ΑΦΜ (e.g. a 9-digit ΑΦΜ or EL123456789).",
+    }),
   websiteUrl: z
     .string()
+    .max(LIMITS.websiteUrl, { message: "Website URL is too long." })
     .url({ message: "Enter a valid URL (https://...)" })
     .or(z.literal("")),
-  logoUrl: z.string().optional(),
-  description: z.string().optional(),
+  logoUrl: z.string().max(LIMITS.websiteUrl).optional(),
+  description: z
+    .string()
+    .max(LIMITS.description, { message: "Description is too long." })
+    .optional(),
   isHiddenFromPublic: z.string().optional(),
 });
 
@@ -165,7 +181,7 @@ export async function submitOnboardingAction(
     data: {
       legalName: data.legalName,
       billingAddress: data.billingAddress,
-      vatNumber: data.vatNumber || null,
+      vatNumber: data.vatNumber ? normalizeVat(data.vatNumber) : null,
       websiteUrl: safeUrl(data.websiteUrl),
       logoUrl,
       description: data.description || null,

@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { LIMITS, isValidPhone, normalizePhone } from "@/lib/validation";
 import type { SubmitState } from "./types";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -29,8 +30,17 @@ export async function submitInterest(
 
   const errors: Record<string, string> = {};
   if (!companyName) errors.companyName = "Company name is required.";
+  else if (companyName.length > LIMITS.companyName)
+    errors.companyName = `Keep the company name under ${LIMITS.companyName} characters.`;
   if (!contactName) errors.contactName = "Your name is required.";
-  if (!EMAIL_RE.test(email)) errors.email = "A valid email is required.";
+  else if (contactName.length > LIMITS.contactName)
+    errors.contactName = `Keep your name under ${LIMITS.contactName} characters.`;
+  if (!EMAIL_RE.test(email) || email.length > LIMITS.email)
+    errors.email = "A valid email is required.";
+  if (!isValidPhone(phone))
+    errors.phone = "Enter a valid phone number, e.g. +30 69XXXXXXXX.";
+  if (message.length > LIMITS.message)
+    errors.message = `Keep your message under ${LIMITS.message} characters.`;
   if (!consent) errors.consent = "Please accept the privacy terms.";
 
   if (Object.keys(errors).length > 0) {
@@ -52,7 +62,7 @@ export async function submitInterest(
         companyName,
         contactName,
         email,
-        phone: phone || null,
+        phone: phone ? normalizePhone(phone) : null,
         message: message || null,
         packageInterestId: packageInterestId || null,
         consentGiven: true,

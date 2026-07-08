@@ -1,5 +1,6 @@
 # All commits shown here from last to first.
-809bcca (HEAD -> main, origin/main)bug: fixed a bug where slots wouldnt decrease when selected, added extra layer
+ed1cd73 (HEAD -> main, origin/main) bug: published state not logical, fixed it and added 3 layers of protection
+809bcca fixed a bug where slots wouldnt decrease when selected, added extra layer
 d4f449e final: prod ready after smoke test
 6c0270c agents refactoring
 6aa70c5 fix: add missing space before "on board" in invite greeting
