@@ -22,10 +22,34 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
 
 ---
 
-## Now / in progress (branch `multi-event-foundation`)
+## Now / in progress
 > Working the **v2 Roadmap** from `PLAN.md §16` (built from your `QA.md` feedback,
 > 2026-07-08). Decided: build real features (not a thin subset), multi-event **IN**,
-> priority order → **Phase A first** (below), see "Queued" for B–G.
+> priority order → **Phase A first** (below, DONE), see "Queued" for B–G.
+
+- ✅✅✅ **Phase A (multi-event) COMPLETE — merged to `main`, pushed, live** (Dimitris,
+  2026-07-08). `multi-event-foundation` branch fast-forward merged (`919c218`).
+
+- 🔴→✅ **Incident: two GitHub remotes, Vercel deployed the wrong one** (found + fixed
+  2026-07-08). `origin` = `stakeholders-platform.git` (all real work, incl. today's
+  multi-event + Neon migration). Vercel's actual production project clones a **different**
+  repo, `sponsor` = `stakeholders-platform_sponsor.git`, which was stuck 16 commits
+  behind at `f608c1a` (pre-Postgres-prep). Both repos' deployments share the **same
+  Neon DB**. After the Neon migration dropped `Setting`, the stale `sponsor`-repo code
+  (still querying `Setting`) started 500ing on every dynamic public page (`/packages`,
+  `/sponsors`, `/become-a-sponsor`) — `/` looked fine only because it was a stale static
+  prerender from an earlier build, not a live query. **Fix:** `git push sponsor main` to
+  sync it to `origin`'s `919c218`. Vercel rebuilt + deployed the correct (Event-based)
+  code. **Verified live:** all public routes → 200; `/` shows the Event-sourced name;
+  `/packages` shows all 4 real packages.
+  **Repoint attempt (2026-07-08):** Dimitris reconnected Vercel's Git integration to
+  `Dimprassos/stakeholders-platform` (dashboard now shows "Connected just now"), but a
+  dashboard **"Redeploy"** on an existing entry still cloned `_sponsor` — likely reusing
+  that deployment's original source metadata rather than the live connection. Testing
+  now with a genuine fresh push to confirm the reconnect actually takes effect for new
+  commits. This doc update + push is that test — check the resulting build log's
+  `Cloning github.com/...` line. **Until confirmed**, keep pushing to both remotes:
+  `git push origin main && git push sponsor main`. See [[multi-agent-project]] in memory.
 
 - ✅ **Phase A Step 1** (committed) — `Event` model + `eventId` on all funnel entities;
   `Setting` dropped (identity on `Event`); migration `20260708113333_multi_event_foundation`;
@@ -53,7 +77,8 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
   typechecks, all routes render correctly (`/` now `ƒ` dynamic) — strong confidence the
   Vercel deploy will succeed. Restored local sqlite client after (`npm run db:generate`);
   typecheck/lint green; local dev server healthy.
-- **Branch is now push-safe** (pending a final review pass before merge to `main`).
+- **Recommended next:** a quick **prod smoke-check** on the live Vercel URL (deploy just
+  triggered) — confirm the new build is up and public pages still render correctly.
 
 ## Queued — v2 Roadmap phases B–G (`PLAN.md §16.2`, after Phase A)
 > Full detail (capability map + tags) lives in `PLAN.md §16.1`; this is just the
