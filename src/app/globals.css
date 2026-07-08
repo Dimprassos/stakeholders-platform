@@ -26,6 +26,22 @@
   }
 }
 
+/* Per-event theme override (Phase B branding): a `data-theme` attribute forces
+   light/dark regardless of OS preference. Attribute selectors out-specificity
+   the plain `:root` rules above (including inside the media query), and work
+   on any element (not just <html>) so the public layout can scope it without
+   affecting the admin CMS. See src/app/(public)/layout.tsx. */
+[data-theme="light"] {
+  --background: #ffffff;
+  --foreground: #171717;
+  --brand-accent: #b45309;
+}
+[data-theme="dark"] {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --brand-accent: #fbbf24;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

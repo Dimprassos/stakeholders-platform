@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { listEvents, getAdminEventId } from "@/lib/event";
 import { ActionForm } from "../action-form";
 import {
@@ -72,19 +73,27 @@ export default async function EventsPage() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {isCurrent ? (
-                      <span className="text-xs text-zinc-400">Editing now</span>
-                    ) : (
-                      <ActionForm action={switchEventAction} className="inline-block">
-                        <input type="hidden" name="eventId" value={e.id} />
-                        <button
-                          type="submit"
-                          className="text-xs font-medium text-foreground underline underline-offset-4"
-                        >
-                          Switch to this event
-                        </button>
-                      </ActionForm>
-                    )}
+                    <div className="flex items-center justify-end gap-3">
+                      <Link
+                        href={`/admin/events/${e.id}`}
+                        className="text-xs text-zinc-600 underline underline-offset-4 hover:text-foreground dark:text-zinc-400"
+                      >
+                        Edit
+                      </Link>
+                      {isCurrent ? (
+                        <span className="text-xs text-zinc-400">Editing now</span>
+                      ) : (
+                        <ActionForm action={switchEventAction} className="inline-block">
+                          <input type="hidden" name="eventId" value={e.id} />
+                          <button
+                            type="submit"
+                            className="text-xs font-medium text-foreground underline underline-offset-4"
+                          >
+                            Switch to this event
+                          </button>
+                        </ActionForm>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );

@@ -1,9 +1,12 @@
 import { PackageForm } from "../package-form";
 import { createPackageAction } from "../actions";
+import { getAdminEvent } from "@/lib/event";
 
+export const dynamic = "force-dynamic";
 export const metadata = { title: "New package" };
 
-export default function NewPackagePage() {
+export default async function NewPackagePage() {
+  const event = await getAdminEvent();
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div>
@@ -12,7 +15,19 @@ export default function NewPackagePage() {
           Add a sponsorship tier.
         </p>
       </div>
-      <PackageForm action={createPackageAction} />
+      <PackageForm
+        action={createPackageAction}
+        initial={{
+          name: "",
+          tier: "",
+          priceEuros: "",
+          currency: event?.currency ?? "EUR",
+          benefits: "",
+          slotsTotal: "",
+          displayOrder: "0",
+          isActive: true,
+        }}
+      />
     </div>
   );
 }

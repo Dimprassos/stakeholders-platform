@@ -17,7 +17,8 @@ async function main() {
     },
   });
 
-  // --- Default event (multi-event foundation, PLAN §16 Phase A) ---
+  // --- Default event (multi-event foundation, PLAN §16 Phase A; content &
+  // branding, Phase B) ---
   const eventData = {
     name: "Stakeholders Summit 2026",
     tagline: "Where industry leaders and brands connect.",
@@ -27,6 +28,38 @@ async function main() {
     senderEmail: "sponsorships@example.com",
     isDefault: true,
     isActive: true,
+    mapUrl: "https://maps.google.com/?q=Megaron+Athens+International+Conference+Centre",
+    currency: "EUR",
+    language: "en",
+    websiteUrl: "https://example.com",
+    twitterUrl: "https://twitter.com/example",
+    linkedinUrl: "https://linkedin.com/company/example",
+    faq: JSON.stringify([
+      {
+        question: "Who should attend?",
+        answer: "Founders, operators, investors and senior decision-makers across the industry.",
+      },
+      {
+        question: "Is there a dress code?",
+        answer: "Business casual for all three days.",
+      },
+      {
+        question: "Can sponsors bring extra staff to the booth?",
+        answer: "Yes — additional badges can be added to any package for a small fee.",
+      },
+    ]),
+    deadlines: JSON.stringify([
+      { label: "Early bird sponsorship deadline", date: "2026-08-15" },
+      { label: "Logo & materials deadline", date: "2026-09-30" },
+      { label: "Final confirmation deadline", date: "2026-10-10" },
+    ]),
+    termsText:
+      "Sponsors commit to the package terms upon confirmation. Benefits are delivered as described on the packages page; substitutions are at the organizer's discretion.",
+    privacyText:
+      "We only use sponsor and attendee data to run this event and will never sell it to third parties. Contact the organizers to request data deletion.",
+    cancellationText:
+      "Cancellations more than 60 days before the event receive a full refund; within 60 days, sponsorships are non-refundable but transferable to a future edition.",
+    themeMode: "AUTO",
   };
   const event = await prisma.event.upsert({
     where: { slug: "stakeholders-summit-2026" },

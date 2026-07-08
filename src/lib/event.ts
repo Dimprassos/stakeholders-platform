@@ -12,6 +12,7 @@ export type EventSettings = {
   startDate: string | null;
   endDate: string | null;
   venue: string | null;
+  language: string;
 };
 
 /**
@@ -80,5 +81,6 @@ export const getEventSettings = cache(async (): Promise<EventSettings> => {
     startDate: event?.startDate ?? null,
     endDate: event?.endDate ?? null,
     venue: event?.venue ?? null,
+    language: event?.language ?? "en",
   };
 });

@@ -69,3 +69,27 @@ export function isValidVat(raw: string): boolean {
   }
   return true;
 }
+
+// ---- URL ----
+
+/** Empty -> null. Otherwise prefixes `https://` if no scheme was given. */
+export function normalizeUrl(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+}
+
+/** Loose hex color check, e.g. "#f59e0b" or "f59e0b". Empty is allowed. */
+export function isValidHexColor(raw: string): boolean {
+  const v = raw.trim();
+  if (!v) return true;
+  return /^#?[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/.test(v);
+}
+
+/** Empty -> null. Otherwise ensures a leading `#` (CSS requires it). */
+export function normalizeHexColor(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  return v.startsWith("#") ? v : `#${v}`;
+}

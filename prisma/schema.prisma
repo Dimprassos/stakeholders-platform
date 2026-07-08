@@ -27,7 +27,7 @@ model User {
 /// A sponsorship event / edition. Everything below (packages, sponsors,
 /// submissions, templates, outreach) is scoped to one Event. One event is
 /// flagged `isDefault` and drives the public site + the admin's current event.
-/// (Multi-event foundation — docs/PLAN.md §16 Phase A.)
+/// (Multi-event foundation — docs/PLAN.md §16 Phase A; content & branding — Phase B.)
 model Event {
   id          String   @id @default(cuid())
   slug        String   @unique
@@ -39,6 +39,30 @@ model Event {
   senderEmail String?
   isDefault   Boolean  @default(false)
   isActive    Boolean  @default(true)
+
+  // --- Phase B: content ---
+  mapUrl            String? // e.g. a Google Maps link
+  currency          String  @default("EUR") // default currency for new packages
+  language          String  @default("en") // BCP-47 tag, drives <html lang>
+  websiteUrl        String?
+  twitterUrl        String?
+  linkedinUrl       String?
+  instagramUrl      String?
+  facebookUrl       String?
+  faq               String  @default("[]") // JSON [{question, answer}]
+  deadlines         String  @default("[]") // JSON [{label, date}]
+  termsText         String?
+  privacyText       String?
+  cancellationText  String?
+
+  // --- Phase B: branding ---
+  themeMode         String  @default("AUTO") // AUTO | LIGHT | DARK | CUSTOM
+  brandColor        String? // hex, used when themeMode = CUSTOM
+  brandInkColor     String?
+  brandAccentColor  String?
+  logoUrl           String?
+  bannerUrl         String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

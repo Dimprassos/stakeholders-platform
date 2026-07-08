@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getEventSettings } from "@/lib/event";
+import { getCurrentEvent } from "@/lib/event";
 import { formatDateRange } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -40,12 +40,22 @@ const CARDS = [
 ];
 
 export default async function Home() {
-  const event = await getEventSettings();
-  const dateRange = formatDateRange(event.startDate, event.endDate);
-  const meta = [dateRange, event.venue].filter(Boolean).join(" · ");
+  const event = await getCurrentEvent();
+  const name = event?.name ?? "Stakeholders Summit 2026";
+  const tagline = event?.tagline ?? "Where industry leaders and brands connect.";
+  const dateRange = formatDateRange(event?.startDate, event?.endDate);
+  const meta = [dateRange, event?.venue].filter(Boolean).join(" · ");
 
   return (
     <>
+      {event?.bannerUrl && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={event.bannerUrl}
+          alt=""
+          className="h-64 w-full object-cover sm:h-80"
+        />
+      )}
       <section className="border-b border-black/10 dark:border-white/10">
         <div className="mx-auto max-w-5xl px-6 py-20 sm:py-28">
           <div className="max-w-3xl">
@@ -55,10 +65,10 @@ export default async function Home() {
               </p>
             )}
             <h1 className="mt-3 text-4xl font-semibold tracking-tight sm:text-6xl">
-              {event.name}
+              {name}
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
-              {event.tagline} Build recognition with the decision-makers shaping the next
+              {tagline} Build recognition with the decision-makers shaping the next
               chapter of the market.
             </p>
 

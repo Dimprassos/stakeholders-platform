@@ -1,33 +1,18 @@
 "use server";
 
-import { writeFile, mkdir } from "node:fs/promises";
-import path from "node:path";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isTokenExpired } from "@/lib/magic-token";
-import { LIMITS, isValidVat, normalizeVat } from "@/lib/validation";
+import { LIMITS, isValidVat, normalizeVat, normalizeUrl } from "@/lib/validation";
+import { ALLOWED_IMAGE_EXT, saveUploadedImage } from "@/lib/uploads";
 import type { OnboardingState } from "./types";
 
 // Logo uploads (dev): stored under public/uploads/logos and served statically.
 // SVG is intentionally excluded (script-in-SVG XSS risk when served same-origin).
 const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2 MB
-const ALLOWED_LOGO_EXT: Record<string, string> = {
-  "image/png": "png",
-  "image/jpeg": "jpg",
-  "image/webp": "webp",
-};
-
-async function saveLogoFile(file: File, sponsorId: string): Promise<string> {
-  const ext = ALLOWED_LOGO_EXT[file.type];
-  const dir = path.join(process.cwd(), "public", "uploads", "logos");
-  await mkdir(dir, { recursive: true });
-  const safeId = sponsorId.replace(/[^a-zA-Z0-9_-]/g, "") || "logo";
-  const filename = `${safeId}-${Date.now()}.${ext}`;
-  await writeFile(path.join(dir, filename), Buffer.from(await file.arrayBuffer()));
-  return `/uploads/logos/${filename}`;
-}
+const ALLOWED_LOGO_EXT = ALLOWED_IMAGE_EXT;
 
 const OnboardingSchema = z.object({
   legalName: z
@@ -104,13 +89,6 @@ export async function declineAction(formData: FormData): Promise<void> {
   revalidatePath(`/invite/${token}`);
 }
 
-function safeUrl(value: string): string | null {
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
-
 export async function submitOnboardingAction(
   _prev: OnboardingState,
   formData: FormData,
@@ -173,7 +151,7 @@ export async function submitOnboardingAction(
         errors: { logoFile: "Logo must be under 2 MB." },
       };
     }
-    logoUrl = await saveLogoFile(logoFile, sponsor.id);
+    logoUrl = await saveUploadedImage(logoFile, "logos", sponsor.id);
   }
 
   await prisma.sponsor.update({
@@ -182,7 +160,7 @@ export async function submitOnboardingAction(
       legalName: data.legalName,
       billingAddress: data.billingAddress,
       vatNumber: data.vatNumber ? normalizeVat(data.vatNumber) : null,
-      websiteUrl: safeUrl(data.websiteUrl),
+      websiteUrl: normalizeUrl(data.websiteUrl),
       logoUrl,
       description: data.description || null,
       isHiddenFromPublic: data.isHiddenFromPublic === "on",

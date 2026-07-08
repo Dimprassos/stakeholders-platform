@@ -33,6 +33,30 @@ model Event {
   senderEmail String?
   isDefault   Boolean  @default(false)
   isActive    Boolean  @default(true)
+
+  // --- Phase B: content ---
+  mapUrl            String?
+  currency          String  @default("EUR")
+  language          String  @default("en")
+  websiteUrl        String?
+  twitterUrl        String?
+  linkedinUrl       String?
+  instagramUrl      String?
+  facebookUrl       String?
+  faq               String  @default("[]")
+  deadlines         String  @default("[]")
+  termsText         String?
+  privacyText       String?
+  cancellationText  String?
+
+  // --- Phase B: branding ---
+  themeMode         String  @default("AUTO")
+  brandColor        String?
+  brandInkColor     String?
+  brandAccentColor  String?
+  logoUrl           String?
+  bannerUrl         String?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
