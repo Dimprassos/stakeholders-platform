@@ -54,7 +54,16 @@ onboarding form page → 200 with legal/VAT/website/logo fields.
    `src/app/invite/[token]/actions.ts`. `PLAN.md §5 D9`. Only if paste-URL isn't enough.
 
 ## Discovered during work
-- _(none open)_
+- **Package slots didn't work** (Dimitris, 2026-07-08: put 2 Founding Partners in a
+  1-slot package). Root cause: `Package.slotsTaken` was never written by any code path
+  (stuck at 0) and no limit was enforced. **Fixed** (pending your browser click-test of
+  the block UI): new `src/lib/slots.ts` derives taken counts live (holding = every
+  status except LEAD/DECLINED) + hard-block enforcement in `sendInviteAction`,
+  `setStatusAction`, `assignPackageAction`. Display now derived on `/packages`, invite
+  page, admin packages. Verified: DB logic + all display sites; typecheck/lint green.
+  Note: `slotsTaken` column now vestigial (left to avoid a 2-schema migration).
+- **Form validation polish (VAT/ΑΦΜ + phone + max-length caps)** — proposed, **parked**
+  until slots is committed. VAT approach TBD (Greek checksum / EU generic / smart).
 
 ## Blocked / decisions pending
 - Email permanent fix waits on a **domain purchase** — your call; optional for now.

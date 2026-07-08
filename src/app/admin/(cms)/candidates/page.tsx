@@ -35,9 +35,9 @@ const STATUS_TONE: Record<string, string> = {
 export default async function CandidatesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; slotFull?: string }>;
 }) {
-  const { status } = await searchParams;
+  const { status, slotFull } = await searchParams;
   const validStatus =
     status && PIPELINE_STATUSES.includes(status as never) ? (status as string) : undefined;
 
@@ -67,6 +67,13 @@ export default async function CandidatesPage({
         </div>
         <AddCandidateForm packages={pkgOptions} />
       </div>
+
+      {slotFull && (
+        <p className="rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+          <strong>{slotFull}</strong> is fully booked — that change was not applied.
+          Free a slot (decline / reset a candidate) or choose another package.
+        </p>
+      )}
 
       {validStatus && (
         <p className="rounded-lg border border-black/10 bg-zinc-50 px-3 py-2 text-sm dark:border-white/10 dark:bg-zinc-900">

@@ -1,6 +1,7 @@
 # All commits shown here from last to first.
-
-6aa70c5 (HEAD -> main, origin/main) fix: add missing space before "on board" in invite greeting
+d4f449e (HEAD -> main, origin/main) final: prod ready after smoke test
+6c0270c agents refactoring
+6aa70c5 fix: add missing space before "on board" in invite greeting
 436ed1b fix: use shared Vercel-aware SITE_URL for invite links
 f608c1a (sponsor/main) fix: use Vercel URL fallback for site metadata
 d3d4d62 chore: prepare Vercel Postgres deployment

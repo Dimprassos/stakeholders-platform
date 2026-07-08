@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { parseBenefits } from "@/lib/format";
 import { formatPrice } from "@/lib/format";
 import { deletePackageAction, togglePackageActiveAction } from "./actions";
+import { slotsTakenByPackage } from "@/lib/slots";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +27,7 @@ export default async function AdminPackagesPage() {
     orderBy: { displayOrder: "asc" },
     include: { _count: { select: { sponsors: true } } },
   });
+  const takenByPackage = await slotsTakenByPackage(packages.map((p) => p.id));
 
   return (
     <div className="space-y-8">
@@ -69,7 +71,7 @@ export default async function AdminPackagesPage() {
                 const benefitCount = parseBenefits(pkg.benefits).length;
                 const slotsLabel =
                   pkg.slotsTotal != null
-                    ? `${pkg.slotsTaken}/${pkg.slotsTotal}`
+                    ? `${takenByPackage.get(pkg.id) ?? 0}/${pkg.slotsTotal}`
                     : "∞";
                 return (
                   <tr key={pkg.id} className="align-middle">

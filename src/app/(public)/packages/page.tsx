@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatPrice, parseBenefits, tierLabel } from "@/lib/format";
+import { slotsTakenByPackage } from "@/lib/slots";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,7 @@ export default async function PackagesPage() {
     where: { isActive: true },
     orderBy: { displayOrder: "asc" },
   });
+  const takenByPackage = await slotsTakenByPackage(packages.map((p) => p.id));
 
   return (
     <section className="mx-auto max-w-5xl px-6 py-16">
@@ -80,7 +82,9 @@ export default async function PackagesPage() {
           {packages.map((pkg) => {
             const benefits = parseBenefits(pkg.benefits);
             const slotsLeft =
-              pkg.slotsTotal != null ? Math.max(pkg.slotsTotal - pkg.slotsTaken, 0) : null;
+              pkg.slotsTotal != null
+                ? Math.max(pkg.slotsTotal - (takenByPackage.get(pkg.id) ?? 0), 0)
+                : null;
             const style = tierStyle(pkg.tier);
 
             return (

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { formatPrice, parseBenefits } from "@/lib/format";
 import { isTokenExpired } from "@/lib/magic-token";
+import { slotsTaken } from "@/lib/slots";
 import { acceptAction, declineAction } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -81,6 +82,10 @@ export default async function ProposalPage({
   }
 
   const benefits = parseBenefits(pkg.benefits);
+  const slotsRemaining =
+    pkg.slotsTotal != null
+      ? Math.max(pkg.slotsTotal - (await slotsTaken(pkg.id)), 0)
+      : null;
   const expiry = sponsor!.tokenExpiresAt!;
   const expiryLabel = expiry.toLocaleString("en-GB", {
     day: "2-digit",
@@ -140,10 +145,9 @@ export default async function ProposalPage({
           )}
         </ul>
 
-        {pkg.slotsTotal != null && (
+        {pkg.slotsTotal != null && slotsRemaining != null && (
           <p className="mt-6 text-xs text-zinc-500">
-            {Math.max(pkg.slotsTotal - pkg.slotsTaken, 0)} of {pkg.slotsTotal}{" "}
-            slots remaining.
+            {slotsRemaining} of {pkg.slotsTotal} slots remaining.
           </p>
         )}
       </section>

@@ -6,6 +6,7 @@ import { generateMagicToken, tokenExpiry } from "@/lib/magic-token";
 import { sendMail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { renderTemplate } from "@/lib/template";
+import { isPackageFull } from "@/lib/slots";
 
 export type InviteState = { ok: boolean; message?: string; previewUrl?: string };
 
@@ -35,6 +36,18 @@ export async function sendInviteAction(
   }
   if (!sponsor.contactEmail) {
     return { ok: false, message: "Candidate has no contact email." };
+  }
+
+  // Slot guard: sending an invite moves the candidate to INVITE_SENT, which
+  // occupies a slot. Refuse if the package is already full.
+  if (await isPackageFull(sponsor.packageId, sponsor.id)) {
+    const total = sponsor.package.slotsTotal;
+    return {
+      ok: false,
+      message: `"${sponsor.package.name}" is fully booked${
+        total != null ? ` (${total}/${total} slots taken)` : ""
+      }. Free a slot or assign another package before inviting.`,
+    };
   }
 
   const token = generateMagicToken();
