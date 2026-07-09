@@ -2,7 +2,6 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { getCurrentEvent } from "@/lib/event";
 import { customBrandVars } from "@/lib/event-content";
-import { themeDataAttribute } from "@/lib/theme-presets";
 
 export default async function PublicLayout({
   children,
@@ -12,10 +11,10 @@ export default async function PublicLayout({
   const event = await getCurrentEvent();
   const themeMode = event?.themeMode ?? "AUTO";
   // AUTO (default) respects the visitor's OS/browser preference — unchanged
-  // from before Phase B. LIGHT/DARK and presets force the palette via
-  // `data-theme` + globals.css only when an organizer deliberately picks one;
-  // CUSTOM keeps AUTO's light/dark behavior but overrides brand colors.
-  const dataTheme = themeDataAttribute(themeMode);
+  // from before Phase B. LIGHT/DARK force the palette via `data-theme` +
+  // globals.css only when an organizer deliberately picks one; CUSTOM keeps
+  // AUTO's light/dark behavior but overrides the brand accent colors.
+  const dataTheme = themeMode === "DARK" ? "dark" : themeMode === "LIGHT" ? "light" : undefined;
   const brandVars = event ? customBrandVars(event) : {};
 
   return (

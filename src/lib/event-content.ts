@@ -65,8 +65,8 @@ export function deadlinesToText(items: Deadline[]): string {
 
 /**
  * CSS custom-property overrides for an event's custom brand colors. Empty
- * unless `themeMode === "CUSTOM"` — LIGHT/DARK and preset themes rely on the
- * `data-theme` attribute + globals.css instead (see `(public)/layout.tsx`).
+ * unless `themeMode === "CUSTOM"` — LIGHT/DARK rely on the `data-theme`
+ * attribute + globals.css instead (see `(public)/layout.tsx`).
  */
 export function customBrandVars(event: {
   themeMode: string;

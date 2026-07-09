@@ -1,13 +1,8 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState } from "react";
 import { updateEventAction } from "./actions";
 import { INITIAL_UPDATE_EVENT_STATE } from "./types";
-import {
-  CORE_THEME_OPTIONS,
-  EVENT_THEME_PRESETS,
-  findThemePreset,
-} from "@/lib/theme-presets";
 
 const inputClass =
   "w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground dark:border-white/20";
@@ -102,18 +97,6 @@ export function EventForm({
 }) {
   const [state, formAction, pending] = useActionState(updateEventAction, INITIAL_UPDATE_EVENT_STATE);
   const errors = state.errors ?? {};
-  const [themeMode, setThemeMode] = useState(initial.themeMode);
-  const [brandColor, setBrandColor] = useState(initial.brandColor);
-  const [brandInkColor, setBrandInkColor] = useState(initial.brandInkColor);
-  const [brandAccentColor, setBrandAccentColor] = useState(initial.brandAccentColor);
-  const selectedPreset = findThemePreset(themeMode);
-
-  function applyPreset(preset: (typeof EVENT_THEME_PRESETS)[number]) {
-    setThemeMode(preset.value);
-    setBrandColor(preset.colors.brand);
-    setBrandInkColor(preset.colors.brandInk);
-    setBrandAccentColor(preset.colors.brandAccent);
-  }
 
   return (
     <form action={formAction} className="space-y-6" noValidate>
@@ -286,78 +269,13 @@ export function EventForm({
           <label className={labelClass} htmlFor="themeMode">
             Theme
           </label>
-          <select
-            id="themeMode"
-            name="themeMode"
-            value={themeMode}
-            onChange={(e) => {
-              const next = e.target.value;
-              setThemeMode(next);
-              const preset = findThemePreset(next);
-              if (preset) {
-                setBrandColor(preset.colors.brand);
-                setBrandInkColor(preset.colors.brandInk);
-                setBrandAccentColor(preset.colors.brandAccent);
-              }
-            }}
-            className={inputClass}
-          >
-            <optgroup label="Base modes">
-              {CORE_THEME_OPTIONS.map((theme) => (
-                <option key={theme.value} value={theme.value}>
-                  {theme.label} — {theme.description}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label="Event presets">
-              {EVENT_THEME_PRESETS.map((theme) => (
-                <option key={theme.value} value={theme.value}>
-                  {theme.label}
-                </option>
-              ))}
-            </optgroup>
+          <select id="themeMode" name="themeMode" defaultValue={initial.themeMode} className={inputClass}>
+            <option value="AUTO">Auto (matches visitor&apos;s device)</option>
+            <option value="LIGHT">Force light</option>
+            <option value="DARK">Force dark</option>
+            <option value="CUSTOM">Custom colors</option>
           </select>
           {errors.themeMode && <p className={errorClass}>{errors.themeMode}</p>}
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          {EVENT_THEME_PRESETS.map((preset) => {
-            const selected = preset.value === themeMode;
-            return (
-              <button
-                key={preset.value}
-                type="button"
-                aria-pressed={selected}
-                onClick={() => applyPreset(preset)}
-                style={{
-                  backgroundColor: preset.colors.background,
-                  color: preset.colors.foreground,
-                  borderColor: selected ? preset.colors.brandAccent : undefined,
-                }}
-                className="rounded-lg border border-black/10 p-3 text-left transition hover:-translate-y-0.5 hover:shadow-sm aria-pressed:ring-2 aria-pressed:ring-brand-accent"
-              >
-                <span className="flex gap-1">
-                  <span
-                    aria-hidden
-                    className="h-5 w-5 rounded-full border border-black/10"
-                    style={{ backgroundColor: preset.colors.brand }}
-                  />
-                  <span
-                    aria-hidden
-                    className="h-5 w-5 rounded-full border border-black/10"
-                    style={{ backgroundColor: preset.colors.brandAccent }}
-                  />
-                  <span
-                    aria-hidden
-                    className="h-5 w-5 rounded-full border border-black/10"
-                    style={{ backgroundColor: preset.colors.foreground }}
-                  />
-                </span>
-                <span className="mt-3 block text-sm font-semibold">{preset.label}</span>
-                <span className="mt-1 block text-xs opacity-75">{preset.description}</span>
-              </button>
-            );
-          })}
         </div>
 
         <div className="grid gap-5 sm:grid-cols-3">
@@ -368,8 +286,7 @@ export function EventForm({
             <input
               id="brandColor"
               name="brandColor"
-              value={brandColor}
-              onChange={(e) => setBrandColor(e.target.value)}
+              defaultValue={initial.brandColor}
               placeholder="#f59e0b"
               className={inputClass}
             />
@@ -382,8 +299,7 @@ export function EventForm({
             <input
               id="brandInkColor"
               name="brandInkColor"
-              value={brandInkColor}
-              onChange={(e) => setBrandInkColor(e.target.value)}
+              defaultValue={initial.brandInkColor}
               placeholder="#1c1917"
               className={inputClass}
             />
@@ -396,8 +312,7 @@ export function EventForm({
             <input
               id="brandAccentColor"
               name="brandAccentColor"
-              value={brandAccentColor}
-              onChange={(e) => setBrandAccentColor(e.target.value)}
+              defaultValue={initial.brandAccentColor}
               placeholder="#b45309"
               className={inputClass}
             />
@@ -405,9 +320,7 @@ export function EventForm({
           </div>
         </div>
         <p className="text-xs text-zinc-500">
-          Custom colors apply when Theme = Custom. Presets fill these colors as a
-          starting point; the saved preset controls the public palette.
-          {selectedPreset ? ` Current preset: ${selectedPreset.label}.` : ""}
+          Colors only apply when Theme = Custom.
         </p>
 
         <ImageField
