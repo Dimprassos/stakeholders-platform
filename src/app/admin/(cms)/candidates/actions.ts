@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isPackageFull, SLOT_HOLDING_STATUSES } from "@/lib/slots";
 import { getAdminEventId } from "@/lib/event";
+import { DELIVERABLE_TYPES } from "@/lib/deliverables";
 import type { CandidateFormState } from "./types";
 import { PIPELINE_STATUSES } from "./types";
 
@@ -142,6 +143,119 @@ export async function assignPackageAction(formData: FormData): Promise<void> {
     data: { packageId: packageId || null },
   });
   revalidatePath("/admin/candidates");
+}
+
+export async function updateSponsorNotesAction(
+  _prev: CandidateFormState,
+  formData: FormData,
+): Promise<CandidateFormState> {
+  const id = str(formData, "id");
+  if (!id) return { ok: false, message: "Missing sponsor." };
+
+  const eventId = await getAdminEventId();
+  // Scope to the admin's current event so one event can't edit another's records.
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id, eventId },
+    select: { id: true },
+  });
+  if (!sponsor) return { ok: false, message: "Sponsor not found." };
+
+  const notes = str(formData, "notes");
+  if (notes.length > 5000) {
+    return { ok: false, message: "Notes are too long (max 5000 characters)." };
+  }
+
+  await prisma.sponsor.update({
+    where: { id },
+    data: { notes: notes || null },
+  });
+  revalidatePath(`/admin/candidates/${id}`);
+  return { ok: true, message: "Notes saved." };
+}
+
+export async function saveDeliverablesAction(
+  _prev: CandidateFormState,
+  formData: FormData,
+): Promise<CandidateFormState> {
+  const id = str(formData, "id");
+  if (!id) return { ok: false, message: "Missing sponsor." };
+
+  const eventId = await getAdminEventId();
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id, eventId },
+    select: { id: true },
+  });
+  if (!sponsor) return { ok: false, message: "Sponsor not found." };
+
+  // Rebuild the checklist from the submitted checkboxes (only known keys).
+  const state: Record<string, boolean> = {};
+  for (const { key } of DELIVERABLE_TYPES) {
+    if (formData.get(`dlv_${key}`) === "on") state[key] = true;
+  }
+
+  await prisma.sponsor.update({
+    where: { id },
+    data: { deliverables: JSON.stringify(state) },
+  });
+  revalidatePath(`/admin/candidates/${id}`);
+  return { ok: true, message: "Deliverables saved." };
+}
+
+export async function addTaskAction(
+  _prev: CandidateFormState,
+  formData: FormData,
+): Promise<CandidateFormState> {
+  const sponsorId = str(formData, "sponsorId");
+  const title = str(formData, "title");
+  const dueDate = str(formData, "dueDate");
+  if (!sponsorId) return { ok: false, message: "Missing sponsor." };
+  if (!title) {
+    return { ok: false, message: "Add a task title.", errors: { title: "Title is required." } };
+  }
+  if (title.length > 200) {
+    return { ok: false, message: "Task title is too long (max 200 characters)." };
+  }
+
+  const eventId = await getAdminEventId();
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id: sponsorId, eventId },
+    select: { id: true },
+  });
+  if (!sponsor) return { ok: false, message: "Sponsor not found." };
+
+  await prisma.task.create({
+    data: { eventId, sponsorId, title, dueDate: dueDate || null },
+  });
+  revalidatePath(`/admin/candidates/${sponsorId}`);
+  return { ok: true, message: "Task added." };
+}
+
+/** Toggle a task's done state. Scoped to the admin's current event. */
+export async function toggleTaskAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("taskId") ?? "");
+  if (!id) return;
+  const eventId = await getAdminEventId();
+  const task = await prisma.task.findFirst({
+    where: { id, eventId },
+    select: { id: true, done: true, sponsorId: true },
+  });
+  if (!task) return;
+  await prisma.task.update({ where: { id }, data: { done: !task.done } });
+  revalidatePath(`/admin/candidates/${task.sponsorId}`);
+}
+
+/** Delete a task. Scoped to the admin's current event. */
+export async function deleteTaskAction(formData: FormData): Promise<void> {
+  const id = String(formData.get("taskId") ?? "");
+  if (!id) return;
+  const eventId = await getAdminEventId();
+  const task = await prisma.task.findFirst({
+    where: { id, eventId },
+    select: { id: true, sponsorId: true },
+  });
+  if (!task) return;
+  await prisma.task.delete({ where: { id } });
+  revalidatePath(`/admin/candidates/${task.sponsorId}`);
 }
 
 export async function togglePublishAction(formData: FormData): Promise<void> {

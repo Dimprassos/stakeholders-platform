@@ -65,6 +65,7 @@ model Event {
   submissions Submission[]
   templates   EmailTemplate[]
   outreach    Outreach[]
+  tasks       Task[]
 }
 
 /// A sponsorship package / tier shown on the public packages page.
@@ -118,10 +119,16 @@ model Sponsor {
   billingAddress String?
   vatNumber      String?
 
+  // Organizer CRM (docs/PLAN.md §16 Phase C): private notes about this sponsor.
+  notes          String?
+  // Deliverables checklist state, JSON object `{ [key]: true }` (see src/lib/deliverables.ts).
+  deliverables   String    @default("{}")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   outreach Outreach[]
+  tasks    Task[]
 
   @@index([eventId])
 }
@@ -178,4 +185,22 @@ model EmailTemplate {
   outreach Outreach[]
 
   @@index([eventId])
+}
+
+/// A follow-up task for a sponsor (docs/PLAN.md §16 Phase C — CRM depth):
+/// e.g. "send logo", with an optional due date and done/pending state.
+model Task {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sponsorId String
+  sponsor   Sponsor  @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  title     String
+  dueDate   String?
+  done      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([sponsorId])
 }

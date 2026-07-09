@@ -118,7 +118,14 @@ export default async function CandidatesPage({
             <tbody className="divide-y divide-black/5 dark:divide-white/5">
               {sponsors.map((s) => (
                 <tr key={s.id} className="align-middle">
-                  <td className="px-4 py-3 font-medium">{s.companyName}</td>
+                  <td className="px-4 py-3 font-medium">
+                    <Link
+                      href={`/admin/candidates/${s.id}`}
+                      className="underline-offset-4 hover:text-brand-accent hover:underline"
+                    >
+                      {s.companyName}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
                     {s.contactName ? (
                       <div>

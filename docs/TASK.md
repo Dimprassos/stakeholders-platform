@@ -13,20 +13,36 @@
 > **Multi-agent:** Claude + GLM/Codex both work here — keep *Last touched* current so we
 > don't collide or duplicate work.
 
-**Status:** **Phase B (event content & branding) deployed & verified in prod** (2026-07-09).
-Phases A + B both live. Next: Phase C (CRM depth). · **Updated:** 2026-07-09 · **By:** Claude
+**Status:** **Phase C (CRM depth) local implementation verified + Neon migrated**
+(2026-07-09). Phases A + B live; Phase C notes/deliverables/task management is implemented
+locally and ready for push/deploy + browser smoke test. · **Updated:** 2026-07-09 · **By:** Codex
 **Last verified:** 2026-07-09 (Claude) — prod routes all 200 incl. new `/faq`; no 500s after
 the Neon migration `20260708150000_event_content_and_branding` + push (`main` = `4cfe3c8`).
 Sequence held correctly: migrate Neon → push → Vercel deploy (avoided the Phase A incident).
+**Local verified:** 2026-07-09 (Codex) — Prisma validate (SQLite + Postgres schema), local
+SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run lint`,
+`npm run build`, and a temporary Task create/toggle/delete smoke test all passed.
+**Prod DB migrated:** 2026-07-09 (Dimitris) — Neon applied
+`20260709090300_add_sponsor_notes`, `20260709091100_add_sponsor_deliverables`, and
+`20260709093000_add_tasks` successfully.
 
 ---
 
 ## Now / in progress
-- **Starting Phase C — CRM depth** (Claude, 2026-07-09): sponsor profile + organizer notes,
-  deliverables checklist, task management. See `PLAN.md §16.2`.
+- **Phase C — CRM depth handoff** (Codex, 2026-07-09): latest
+  `old_sessions/claude_session_last.md` stopped while adding task management to the sponsor
+  detail page. Current local work includes sponsor profile detail, private organizer notes,
+  deliverables checklist, and task UI/actions. See `PLAN.md §16.2`.
+- **Migration gap resolved locally:** added matching SQLite/Postgres `Task` migrations after
+  the existing notes/deliverables migrations.
+- **Neon migration applied:** Phase C production database changes are now live in Neon.
 
 ## Next up — Phase C+
-Phases C–G queued in `PLAN.md §16.2`. Now on Phase C (CRM depth); D–G after.
+1. Browser-verify `/admin/candidates/[id]`: notes save, deliverables save, task add/toggle/delete.
+2. Commit + push the Phase C code/migrations.
+3. Let Vercel deploy, then smoke-test admin candidate detail in prod.
+
+Phases D–G remain queued in `PLAN.md §16.2` after Phase C is verified.
 
 ### Smaller open items (optional, low priority)
 - **Email permanent fix**: buy + authenticate a domain (SPF/DKIM/DMARC) so invites don't
@@ -47,6 +63,7 @@ Phases C–G queued in `PLAN.md §16.2`. Now on Phase C (CRM depth); D–G after
   interest + onboarding forms.
 
 ## Blocked / decisions pending
+- Phase C prod deploy now waits only on commit/push + Vercel deploy.
 - Email permanent fix waits on a **domain purchase** — your call; optional for now.
 
 ## Just landed (full history in `../CHANGELOG.md`)
@@ -117,4 +134,4 @@ I am guessing its gonna have to be something similar with apexathens2026.com
 </details>
 
 ---
-_Last touched: 2026-07-08 · Claude_
+_Last touched: 2026-07-09 · Codex_
