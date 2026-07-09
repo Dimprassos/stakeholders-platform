@@ -1,4 +1,4 @@
-# All commits shown here from last to first.
+# All commits shown here from last to first and on which branch.
 main branch:
 9616012 (HEAD -> main, sponsor/main, origin/main) docs: note Vercel git-repoint verification in progress
 50cdb86 feat: validation polish
@@ -25,3 +25,6 @@ multi-event foundation:
 81c4054 feat: mirror multi-event schema to Postgres + fix homepage build-time prerender (Phase A prod)
 bbdee9c feat: multi-event query-scoping + admin event switcher (Phase A step 2)
 833c29c feat: multi-event foundation — Event model + eventId scoping (Phase A step 1)
+
+event-content-branding
+95eec84 (HEAD -> event-content-branding) feat: event content & branding (Phase B) — FAQ, deadlines, theme, logo/banner 
