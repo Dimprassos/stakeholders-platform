@@ -138,6 +138,50 @@
   transition-timing-function: ease;
 }
 
+/* Admin CMS reuses the public site's layered surfaces (Phase C theming): the
+   same beige/dark gradient background, glassy chrome top bar, a distinct main
+   surface, and --line separators between top bar / main / footer — driven by the
+   same theme vars + AdminThemeSwitcher. Mirrors #public-theme-root above.
+   See src/app/admin/(cms)/layout.tsx. */
+#admin-theme-root {
+  background: var(--site-bg);
+  transition:
+    background 220ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+#admin-theme-root > header {
+  background: var(--chrome-bg);
+  border-color: var(--line);
+  box-shadow: var(--chrome-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+#admin-theme-root > footer {
+  background: var(--footer-bg);
+  border-color: var(--line);
+}
+
+.admin-main-surface {
+  background: var(--main-bg);
+}
+
+#admin-theme-root[data-theme="light"] .admin-main-surface [class*="rounded-xl"][class*="border"],
+#admin-theme-root[data-theme="light"] .admin-main-surface [class*="rounded-lg"][class*="border"] {
+  background-color: var(--surface-bg);
+  box-shadow: var(--surface-shadow);
+}
+
+#admin-theme-root *,
+#admin-theme-root *::before,
+#admin-theme-root *::after {
+  transition-property: background-color, border-color, color, fill, stroke, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

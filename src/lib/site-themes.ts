@@ -1,6 +1,11 @@
 export const PUBLIC_THEME_ROOT_ID = "public-theme-root";
 export const SITE_THEME_STORAGE_KEY = "stakeholders-site-theme";
 
+// The admin CMS gets its own independent theme preference (same 3 options),
+// stored separately so it never collides with a visitor's public-site choice.
+export const ADMIN_THEME_ROOT_ID = "admin-theme-root";
+export const ADMIN_THEME_STORAGE_KEY = "stakeholders-admin-theme";
+
 export const SITE_THEME_OPTIONS = [
   {
     value: "system",

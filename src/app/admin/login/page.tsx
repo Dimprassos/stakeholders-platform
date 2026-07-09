@@ -16,7 +16,10 @@ export default function LoginPage() {
   const errors = state.errors ?? {};
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 dark:bg-zinc-950">
+    <main
+      data-theme="light"
+      className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-foreground dark:bg-zinc-950"
+    >
       <div className="w-full max-w-sm">
         <h1 className="text-2xl font-semibold tracking-tight">Admin sign in</h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">

@@ -13,18 +13,19 @@
 > **Multi-agent:** Claude + GLM/Codex both work here — keep *Last touched* current so we
 > don't collide or duplicate work.
 
-**Status:** **Public light theme polish in progress** (2026-07-09).
+**Status:** **Phase D Email Center v1 in progress** (2026-07-09).
 Phases A + B live; Phase C notes/deliverables/task management is implemented, Neon migrated,
 and pushed. VAT/ΑΦΜ validation is now format-level and the onboarding form keeps typed values
-after validation errors. Current focus: improve the visitor light theme so header, main content,
-cards, and footer have clearer but still soft visual separation. · **Updated:** 2026-07-09 · **By:** Codex
+after validation errors. Current focus: begin Phase D with a contained Email Center view over
+existing per-event outreach logs and templates. · **Updated:** 2026-07-09 · **By:** Codex
 **Last verified:** 2026-07-09 (Claude) — prod routes all 200 incl. new `/faq`; no 500s after
 the Neon migration `20260708150000_event_content_and_branding` + push (`main` = `4cfe3c8`).
 Sequence held correctly: migrate Neon → push → Vercel deploy (avoided the Phase A incident).
-**Local verified:** 2026-07-09 (Codex) — `npm run typecheck`, `npm run lint`, SQLite
-`prisma validate`, DB-level notes/deliverables/task smoke test, and HTTP smoke checks passed
-(`/`, `/packages`, `/sponsors` → 200; `/admin/candidates` → login redirect). Postgres schema
-validation requires a temporary Postgres `DATABASE_URL` instead of the local SQLite env.
+**Local verified:** 2026-07-09 (Codex) — `npm run typecheck`, `npm run lint`,
+`npm run build` (with network for Next fonts), SQLite `prisma validate`, DB-level
+notes/deliverables/task smoke test, and HTTP smoke checks passed (`/`, `/packages`,
+`/sponsors` → 200; `/admin/candidates` and `/admin/email-center` → login redirect).
+Postgres schema validation requires a temporary Postgres `DATABASE_URL` instead of the local SQLite env.
 **Prod DB migrated:** 2026-07-09 (Dimitris) — Neon applied
 `20260709090300_add_sponsor_notes`, `20260709091100_add_sponsor_deliverables`, and
 `20260709093000_add_tasks` successfully.
@@ -32,9 +33,9 @@ validation requires a temporary Postgres `DATABASE_URL` instead of the local SQL
 ---
 
 ## Now / in progress
-- **Public light theme polish** (Codex, 2026-07-09): soften the light theme with warmer
-  page background, clearer header/footer bands, and better separation so package cards do not
-  blend into the page.
+- **Phase D — Email Center v1** (Codex, 2026-07-09): add an admin Email Center scoped to
+  the selected event. First slice is read-only: communication stats, recent outreach history,
+  and available email templates based on the existing `Outreach` / `EmailTemplate` models.
 - **Phase C verification** (Codex, 2026-07-09): working on `main`; no commit/push. Verify
   `/admin/candidates/[id]` notes, deliverables, and task actions, then re-check onboarding
   validation UX.
@@ -51,10 +52,10 @@ validation requires a temporary Postgres `DATABASE_URL` instead of the local SQL
 - **Neon migration applied:** Phase C production database changes are now live in Neon.
 
 ## Next up — Phase C+
-1. Browser-verify public light theme on `/` and `/packages` for clearer section/card separation.
+1. Browser-verify `/admin/email-center`: stats, outreach history, templates, and event scoping.
 2. Browser-verify `/admin/candidates/[id]`: notes save, deliverables save, task add/toggle/delete.
    DB-level smoke passed; still needs a real logged-in browser click-through.
-3. Browser-verify onboarding form validation preserves typed values after an error.
+3. Decide the next Phase D slice: editable templates, manual email composer, or inbound replies.
 
 Phases D–G remain queued in `PLAN.md §16.2` after Phase C is verified.
 
