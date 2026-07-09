@@ -22,10 +22,12 @@ function getRoot(): HTMLElement | null {
   return document.getElementById(PUBLIC_THEME_ROOT_ID);
 }
 
-function restoreEventTheme(root: HTMLElement) {
-  const eventTheme = root.dataset.eventTheme;
-  if (eventTheme) root.dataset.theme = eventTheme;
-  else root.removeAttribute("data-theme");
+function systemTheme(): "light" | "dark" {
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function restoreSystemTheme(root: HTMLElement) {
+  root.dataset.theme = systemTheme();
 
   const eventVars: Partial<Record<(typeof THEME_VARS)[number], string | undefined>> = {
     "--brand": root.dataset.eventBrand,
@@ -46,13 +48,13 @@ function applySiteTheme(themeValue: SiteThemeValue) {
   root.dataset.userTheme = themeValue;
 
   if (themeValue === "system") {
-    restoreEventTheme(root);
+    restoreSystemTheme(root);
     return;
   }
 
   const theme = findSiteTheme(themeValue);
   if (!theme || !("colors" in theme)) {
-    restoreEventTheme(root);
+    restoreSystemTheme(root);
     return;
   }
 
@@ -89,6 +91,13 @@ export function SiteThemeSwitcher() {
     const stored = getStoredTheme();
     if (selectRef.current) selectRef.current.value = stored;
     applySiteTheme(stored);
+
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleSystemChange = () => {
+      if (getStoredTheme() === "system") applySiteTheme("system");
+    };
+    media.addEventListener("change", handleSystemChange);
+    return () => media.removeEventListener("change", handleSystemChange);
   }, []);
 
   return (

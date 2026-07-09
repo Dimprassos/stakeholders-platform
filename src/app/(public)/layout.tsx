@@ -36,7 +36,11 @@ export default async function PublicLayout({
         Skip to content
       </a>
       <SiteHeader />
-      <main id="main-content" tabIndex={-1} className="flex-1 focus:outline-none">
+      <main
+        id="main-content"
+        tabIndex={-1}
+        className="public-main-surface flex-1 focus:outline-none"
+      >
         {children}
       </main>
       <SiteFooter />

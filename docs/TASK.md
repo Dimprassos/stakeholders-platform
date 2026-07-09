@@ -13,7 +13,7 @@
 > **Multi-agent:** Claude + GLM/Codex both work here — keep *Last touched* current so we
 > don't collide or duplicate work.
 
-**Status:** **Visitor site theme switcher implemented and verified locally** (2026-07-09).
+**Status:** **Visitor site theme switcher simplified and verified locally** (2026-07-09).
 Phases A + B live; Phase C notes/deliverables/task management is implemented, Neon migrated,
 and pushed. VAT/ΑΦΜ validation is now format-level and the onboarding form keeps typed values
 after validation errors. Current focus: add a public-site theme switcher for visitors, scoped
@@ -32,9 +32,9 @@ SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run
 
 ## Now / in progress
 - **Visitor theme switcher** (Codex, 2026-07-09): add a header control on the public site
-  so each visitor can choose System, Light, Dark, Gold, Teal, Ruby, or Emerald. Store the
-  choice locally in the browser and scope it to the public layout only. Local typecheck/lint/build
-  passed.
+  so each visitor can choose only System, Light, or Dark. Store the choice locally in the
+  browser and scope it to the public layout only. Light theme is now warmer/Athens-inspired
+  instead of flat white.
 - **Onboarding VAT/form UX polish** (Codex, 2026-07-09): user found `123456789`
   repeatedly failed VAT validation and failed submits could force re-entry. Fixed by relaxing VAT
   validation to format-level checks, keeping submitted values after server errors, and adding inline

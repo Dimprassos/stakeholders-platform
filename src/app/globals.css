@@ -1,8 +1,18 @@
 @import "tailwindcss";
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --site-bg:
+    radial-gradient(circle at 12% 0%, rgba(245, 158, 11, 0.12), transparent 28rem),
+    linear-gradient(180deg, #fffdf7 0%, #f8fafc 48%, #f3f4f6 100%);
+  --chrome-bg: rgba(255, 255, 255, 0.78);
+  --main-bg:
+    radial-gradient(circle at 92% 0%, rgba(37, 99, 235, 0.06), transparent 24rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(248, 250, 252, 0.86));
+  --footer-bg: rgba(15, 23, 42, 0.035);
+  --line: rgba(15, 23, 42, 0.1);
   --brand: #f59e0b; /* warm amber-gold — solid fills (buttons, highlights) */
   --brand-ink: #1c1917; /* readable text on the gold fill */
   --brand-accent: #b45309; /* gold accent for text/links on light backgrounds */
@@ -22,6 +32,15 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --site-bg:
+      radial-gradient(circle at 18% 0%, rgba(251, 191, 36, 0.16), transparent 30rem),
+      linear-gradient(180deg, #080b12 0%, #0a0a0a 55%, #050507 100%);
+    --chrome-bg: rgba(8, 11, 18, 0.76);
+    --main-bg:
+      radial-gradient(circle at 88% 0%, rgba(37, 99, 235, 0.1), transparent 24rem),
+      linear-gradient(180deg, rgba(15, 23, 42, 0.62), rgba(5, 6, 10, 0.9));
+    --footer-bg: rgba(255, 255, 255, 0.035);
+    --line: rgba(255, 255, 255, 0.11);
     --brand-accent: #fbbf24; /* lighter gold reads better on dark backgrounds */
   }
 }
@@ -32,56 +51,74 @@
    on any element (not just <html>) so the public layout can scope it without
    affecting the admin CMS. See src/app/(public)/layout.tsx. */
 [data-theme="light"] {
-  --background: #ffffff;
-  --foreground: #171717;
-  --brand: #f59e0b;
-  --brand-ink: #1c1917;
-  --brand-accent: #b45309;
+  --background: #fbf7ee;
+  --foreground: #111827;
+  --site-bg:
+    radial-gradient(circle at 18% -10%, rgba(147, 197, 253, 0.26), transparent 26rem),
+    radial-gradient(circle at 88% 8%, rgba(251, 191, 36, 0.12), transparent 22rem),
+    linear-gradient(180deg, #fffaf0 0%, #f8fafc 50%, #eef2f7 100%);
+  --chrome-bg: rgba(255, 255, 255, 0.74);
+  --main-bg:
+    radial-gradient(circle at 88% 6%, rgba(147, 197, 253, 0.12), transparent 26rem),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(241, 245, 249, 0.82));
+  --footer-bg:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(226, 232, 240, 0.72));
+  --line: rgba(15, 23, 42, 0.1);
+  --brand: #93c5fd;
+  --brand-ink: #0f172a;
+  --brand-accent: #2563eb;
   color-scheme: light;
 }
 [data-theme="dark"] {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --brand: #f59e0b;
+  --background: #080b12;
+  --foreground: #f8fafc;
+  --site-bg:
+    radial-gradient(circle at 20% -10%, rgba(251, 191, 36, 0.18), transparent 28rem),
+    radial-gradient(circle at 88% 0%, rgba(37, 99, 235, 0.12), transparent 24rem),
+    linear-gradient(180deg, #080b12 0%, #0b1020 55%, #05060a 100%);
+  --chrome-bg: rgba(8, 11, 18, 0.72);
+  --main-bg:
+    radial-gradient(circle at 86% 0%, rgba(37, 99, 235, 0.12), transparent 26rem),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.64), rgba(5, 6, 10, 0.92));
+  --footer-bg:
+    linear-gradient(180deg, rgba(15, 23, 42, 0.42), rgba(2, 6, 23, 0.84));
+  --line: rgba(255, 255, 255, 0.12);
+  --brand: #fbbf24;
   --brand-ink: #1c1917;
   --brand-accent: #fbbf24;
   color-scheme: dark;
 }
 
-[data-theme="site-gold"] {
-  --background: #fffdf7;
-  --foreground: #1c1917;
-  --brand: #f59e0b;
-  --brand-ink: #1c1917;
-  --brand-accent: #b45309;
-  color-scheme: light;
+#public-theme-root {
+  background: var(--site-bg);
+  transition:
+    background 220ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
 }
 
-[data-theme="site-teal"] {
-  --background: #f7fffb;
-  --foreground: #10201f;
-  --brand: #14b8a6;
-  --brand-ink: #052f2b;
-  --brand-accent: #0f766e;
-  color-scheme: light;
+#public-theme-root > header {
+  background: var(--chrome-bg);
+  border-color: var(--line);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
 }
 
-[data-theme="site-ruby"] {
-  --background: #fff8f7;
-  --foreground: #241312;
-  --brand: #e11d48;
-  --brand-ink: #fff1f2;
-  --brand-accent: #be123c;
-  color-scheme: light;
+#public-theme-root > footer {
+  background: var(--footer-bg);
+  border-color: var(--line);
 }
 
-[data-theme="site-emerald"] {
-  --background: #f7fdf9;
-  --foreground: #102016;
-  --brand: #22c55e;
-  --brand-ink: #052e16;
-  --brand-accent: #15803d;
-  color-scheme: light;
+.public-main-surface {
+  background: var(--main-bg);
+}
+
+#public-theme-root *,
+#public-theme-root *::before,
+#public-theme-root *::after {
+  transition-property: background-color, border-color, color, fill, stroke, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
 }
 
 body {
