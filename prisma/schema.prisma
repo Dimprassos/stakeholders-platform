@@ -56,7 +56,7 @@ model Event {
   cancellationText  String?
 
   // --- Phase B: branding ---
-  themeMode         String  @default("AUTO") // AUTO | LIGHT | DARK | CUSTOM
+  themeMode         String  @default("AUTO") // AUTO | LIGHT | DARK | CUSTOM | PRESET_*
   brandColor        String? // hex, used when themeMode = CUSTOM
   brandInkColor     String?
   brandAccentColor  String?

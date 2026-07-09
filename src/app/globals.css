@@ -42,6 +42,46 @@
   --brand-accent: #fbbf24;
 }
 
+[data-theme="summit-gold"] {
+  --background: #fffdf7;
+  --foreground: #1c1917;
+  --brand: #f59e0b;
+  --brand-ink: #1c1917;
+  --brand-accent: #b45309;
+}
+
+[data-theme="aegean-teal"] {
+  --background: #f7fffb;
+  --foreground: #10201f;
+  --brand: #14b8a6;
+  --brand-ink: #052f2b;
+  --brand-accent: #0f766e;
+}
+
+[data-theme="executive-red"] {
+  --background: #fff8f7;
+  --foreground: #241312;
+  --brand: #e11d48;
+  --brand-ink: #fff1f2;
+  --brand-accent: #be123c;
+}
+
+[data-theme="emerald-hall"] {
+  --background: #f7fdf9;
+  --foreground: #102016;
+  --brand: #22c55e;
+  --brand-ink: #052e16;
+  --brand-accent: #15803d;
+}
+
+[data-theme="electric-lime"] {
+  --background: #fbfff1;
+  --foreground: #172006;
+  --brand: #a3e635;
+  --brand-ink: #1a2e05;
+  --brand-accent: #4d7c0f;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);

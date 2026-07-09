@@ -6,11 +6,10 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { ADMIN_EVENT_COOKIE } from "@/lib/event";
 import { textToFaq, textToDeadlines } from "@/lib/event-content";
+import { isThemeModeValue } from "@/lib/theme-presets";
 import { ALLOWED_IMAGE_EXT, MAX_IMAGE_BYTES, saveUploadedImage } from "@/lib/uploads";
 import { normalizeUrl, normalizeHexColor, isValidHexColor } from "@/lib/validation";
 import type { UpdateEventState } from "./types";
-
-const THEME_MODES = ["AUTO", "LIGHT", "DARK", "CUSTOM"] as const;
 
 function slugify(input: string): string {
   return (
@@ -131,7 +130,7 @@ export async function updateEventAction(
 
   const themeMode = str("themeMode");
   const errors: Record<string, string> = {};
-  if (!THEME_MODES.includes(themeMode as (typeof THEME_MODES)[number])) {
+  if (!isThemeModeValue(themeMode)) {
     errors.themeMode = "Invalid theme.";
   }
   for (const [field, value] of [
