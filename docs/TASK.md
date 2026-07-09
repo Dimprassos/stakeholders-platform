@@ -13,22 +13,20 @@
 > **Multi-agent:** Claude + GLM/Codex both work here — keep *Last touched* current so we
 > don't collide or duplicate work.
 
-**Status:** Phase 4 — **demo deployed, live & verified** (v1 §12 funnel green local + prod
-read-path). Only optional upgrades remain (see Next up). · **Updated:** 2026-07-08 · **By:** Claude
-**Last verified:** 2026-07-08 (Claude) — local funnel read-paths all green: `/`, `/packages`,
-`/sponsors` (publish-control hides non-published), `/become-a-sponsor`, `/admin/login` → 200;
-invite proposal renders with correct **"on board" spacing** + package + accept/decline;
-onboarding form page → 200 with legal/VAT/website/logo fields.
+**Status:** **Phase B (event content & branding) deployed & verified in prod** (2026-07-09).
+Phases A + B both live. Next: Phase C (CRM depth). · **Updated:** 2026-07-09 · **By:** Claude
+**Last verified:** 2026-07-09 (Claude) — prod routes all 200 incl. new `/faq`; no 500s after
+the Neon migration `20260708150000_event_content_and_branding` + push (`main` = `4cfe3c8`).
+Sequence held correctly: migrate Neon → push → Vercel deploy (avoided the Phase A incident).
 
 ---
 
 ## Now / in progress
-- **Phase B built locally & verified — awaiting your admin-UI click-test + prod migration
-  approval** (Claude, 2026-07-08). See details below and in "Just landed".
+- **Starting Phase C — CRM depth** (Claude, 2026-07-09): sponsor profile + organizer notes,
+  deliverables checklist, task management. See `PLAN.md §16.2`.
 
-## Next up — after Phase B
-Everything else queued (Phases C–G) stays in `PLAN.md §16.2` — pick the next slice once
-Phase B is confirmed and (optionally) deployed.
+## Next up — Phase C+
+Phases C–G queued in `PLAN.md §16.2`. Now on Phase C (CRM depth); D–G after.
 
 ### Smaller open items (optional, low priority)
 - **Email permanent fix**: buy + authenticate a domain (SPF/DKIM/DMARC) so invites don't
@@ -52,7 +50,7 @@ Phase B is confirmed and (optionally) deployed.
 - Email permanent fix waits on a **domain purchase** — your call; optional for now.
 
 ## Just landed (full history in `../CHANGELOG.md`)
-- **Phase B — event content & branding, built locally, NOT yet deployed** (2026-07-08).
+- **Phase B — event content & branding, DEPLOYED to prod** (2026-07-09; built 2026-07-08).
   `Event` model extended: FAQ + key dates (JSON-as-text, same convention as
   `Package.benefits`), terms/privacy/cancellation text, social links, map, currency,
   language, and branding (`themeMode` LIGHT/DARK/CUSTOM + brand colors + logo/banner).

@@ -343,9 +343,9 @@ Sponsors  ─────▶ │ /sponsors                                      
 > multiple events, do it before the rest (it changes the schema everywhere and is
 > painful to retrofit). If the demo stays single-event, skip A and start at B.
 
-- **Phase A — Multi-event foundation** 🔴 *(decision pending)*
+- **Phase A — Multi-event foundation** ✅ *(deployed 2026-07-08)*
   `Event` model; scope all entities by `eventId`; admin event switcher.
-- **Phase B — Event content & branding** 🟢 *(cheap, high-visibility)*
+- **Phase B — Event content & branding** ✅ *(deployed 2026-07-09)*
   rich event fields + B&W/custom theme + logo/banner/hero.
 - **Phase C — CRM depth** 🟢🟡
   sponsor profile + organizer notes; deliverables checklist; task management.
