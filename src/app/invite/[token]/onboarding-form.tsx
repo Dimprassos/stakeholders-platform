@@ -1,20 +1,29 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { submitOnboardingAction } from "./actions";
-import { INITIAL_ONBOARDING_STATE } from "./types";
-import { LIMITS } from "@/lib/validation";
+import { INITIAL_ONBOARDING_STATE, type OnboardingValues } from "./types";
+import { getVatValidationError, LIMITS, normalizeVat } from "@/lib/validation";
 
 const inputClass =
   "w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground dark:border-white/20";
 const labelClass = "block text-sm font-medium";
 const errorClass = "mt-1 text-xs text-red-600 dark:text-red-400";
+const hintClass = "mt-1 text-xs text-zinc-500";
 
-export function OnboardingForm({
-  token,
-  initial,
-  allowFileUpload = true,
-}: {
+function toInitialValues(initial: OnboardingFormProps["initial"]): OnboardingValues {
+  return {
+    legalName: initial?.legalName ?? "",
+    billingAddress: initial?.billingAddress ?? "",
+    vatNumber: initial?.vatNumber ?? "",
+    websiteUrl: initial?.websiteUrl ?? "",
+    logoUrl: initial?.logoUrl ?? "",
+    description: initial?.description ?? "",
+    isHiddenFromPublic: initial?.isHiddenFromPublic ?? false,
+  };
+}
+
+type OnboardingFormProps = {
   token: string;
   allowFileUpload?: boolean;
   initial?: {
@@ -24,13 +33,34 @@ export function OnboardingForm({
     websiteUrl: string;
     logoUrl: string;
     description: string;
+    isHiddenFromPublic?: boolean;
   };
-}) {
+};
+
+export function OnboardingForm({
+  token,
+  initial,
+  allowFileUpload = true,
+}: OnboardingFormProps) {
   const [state, formAction, pending] = useActionState(
     submitOnboardingAction,
     INITIAL_ONBOARDING_STATE,
   );
+  const [values, setValues] = useState<OnboardingValues>(() =>
+    toInitialValues(initial),
+  );
   const errors = state.errors ?? {};
+  const vatFormatError = getVatValidationError(values.vatNumber);
+  const vatServerError = errors.vatNumber;
+  const vatNormalized = normalizeVat(values.vatNumber);
+  const showVatFeedback = values.vatNumber.trim().length > 0;
+
+  function setValue<K extends keyof OnboardingValues>(
+    key: K,
+    value: OnboardingValues[K],
+  ) {
+    setValues((current) => ({ ...current, [key]: value }));
+  }
 
   return (
     <form action={formAction} className="space-y-6" noValidate>
@@ -49,10 +79,12 @@ export function OnboardingForm({
         <input
           id="legalName"
           name="legalName"
-          defaultValue={initial?.legalName ?? ""}
+          value={values.legalName}
+          onChange={(e) => setValue("legalName", e.target.value)}
           maxLength={LIMITS.legalName}
           className={inputClass}
           required
+          aria-invalid={!!errors.legalName}
         />
         {errors.legalName && <p className={errorClass}>{errors.legalName}</p>}
       </div>
@@ -65,10 +97,12 @@ export function OnboardingForm({
           id="billingAddress"
           name="billingAddress"
           rows={3}
-          defaultValue={initial?.billingAddress ?? ""}
+          value={values.billingAddress}
+          onChange={(e) => setValue("billingAddress", e.target.value)}
           maxLength={LIMITS.billingAddress}
           className={inputClass}
           required
+          aria-invalid={!!errors.billingAddress}
         />
         {errors.billingAddress && <p className={errorClass}>{errors.billingAddress}</p>}
       </div>
@@ -81,13 +115,31 @@ export function OnboardingForm({
           <input
             id="vatNumber"
             name="vatNumber"
-            defaultValue={initial?.vatNumber ?? ""}
+            value={values.vatNumber}
+            onChange={(e) => setValue("vatNumber", e.target.value)}
             maxLength={LIMITS.vatNumber}
             autoCapitalize="characters"
             placeholder="123456789 or EL123456789"
             className={`${inputClass} uppercase placeholder:normal-case`}
+            aria-invalid={!!(vatServerError || vatFormatError)}
+            aria-describedby="vatNumberFeedback"
           />
-          {errors.vatNumber && <p className={errorClass}>{errors.vatNumber}</p>}
+          <p
+            id="vatNumberFeedback"
+            className={
+              vatServerError || vatFormatError
+                ? errorClass
+                : showVatFeedback
+                  ? "mt-1 text-xs text-green-700 dark:text-green-400"
+                  : hintClass
+            }
+          >
+            {vatServerError ??
+              vatFormatError ??
+              (showVatFeedback
+                ? `Looks OK. We'll store it as ${vatNormalized}.`
+                : "Optional. We accept format-valid VAT/TIN values for organizer review.")}
+          </p>
         </div>
         <div>
           <label className={labelClass} htmlFor="websiteUrl">
@@ -97,10 +149,12 @@ export function OnboardingForm({
             id="websiteUrl"
             name="websiteUrl"
             type="url"
-            defaultValue={initial?.websiteUrl ?? ""}
+            value={values.websiteUrl}
+            onChange={(e) => setValue("websiteUrl", e.target.value)}
             maxLength={LIMITS.websiteUrl}
             className={inputClass}
             placeholder="https://example.com"
+            aria-invalid={!!errors.websiteUrl}
           />
           {errors.websiteUrl && <p className={errorClass}>{errors.websiteUrl}</p>}
         </div>
@@ -130,9 +184,11 @@ export function OnboardingForm({
           name="logoUrl"
           type="url"
           aria-label="Logo URL (if already hosted online)"
-          defaultValue={initial?.logoUrl ?? ""}
+          value={values.logoUrl}
+          onChange={(e) => setValue("logoUrl", e.target.value)}
           className={`${inputClass} ${allowFileUpload ? "mt-2" : "mt-1"}`}
           placeholder="https://example.com/logo.png"
+          aria-invalid={!!errors.logoUrl}
         />
         {errors.logoUrl && <p className={errorClass}>{errors.logoUrl}</p>}
         {!allowFileUpload && (
@@ -151,7 +207,8 @@ export function OnboardingForm({
           id="description"
           name="description"
           rows={3}
-          defaultValue={initial?.description ?? ""}
+          value={values.description}
+          onChange={(e) => setValue("description", e.target.value)}
           maxLength={LIMITS.description}
           className={inputClass}
         />
@@ -159,7 +216,13 @@ export function OnboardingForm({
 
       <div>
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" name="isHiddenFromPublic" className="mt-1" />
+          <input
+            type="checkbox"
+            name="isHiddenFromPublic"
+            checked={values.isHiddenFromPublic}
+            onChange={(e) => setValue("isHiddenFromPublic", e.target.checked)}
+            className="mt-1"
+          />
           <span>
             Hide me from the public sponsors page (the organizers will still see my
             details)

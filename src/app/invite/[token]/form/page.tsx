@@ -83,6 +83,7 @@ export default async function OnboardingFormPage({
             websiteUrl: sponsor.websiteUrl ?? "",
             logoUrl: sponsor.logoUrl ?? "",
             description: sponsor.description ?? "",
+            isHiddenFromPublic: sponsor.isHiddenFromPublic,
           }}
         />
       </div>

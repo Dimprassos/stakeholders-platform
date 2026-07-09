@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { isTokenExpired } from "@/lib/magic-token";
 import { LIMITS, isValidVat, normalizeVat, normalizeUrl } from "@/lib/validation";
 import { ALLOWED_IMAGE_EXT, saveUploadedImage } from "@/lib/uploads";
-import type { OnboardingState } from "./types";
+import type { OnboardingState, OnboardingValues } from "./types";
 
 // Logo uploads (dev): stored under public/uploads/logos and served statically.
 // SVG is intentionally excluded (script-in-SVG XSS risk when served same-origin).
@@ -27,7 +27,7 @@ const OnboardingSchema = z.object({
     .string()
     .max(LIMITS.vatNumber, { message: "VAT number is too long." })
     .refine(isValidVat, {
-      message: "Enter a valid VAT number / ΑΦΜ (e.g. a 9-digit ΑΦΜ or EL123456789).",
+      message: "Use 6-20 letters/numbers, e.g. 123456789 or EL123456789.",
     }),
   websiteUrl: z
     .string()
@@ -111,6 +111,15 @@ export async function submitOnboardingAction(
     description: str(formData, "description"),
     isHiddenFromPublic: str(formData, "isHiddenFromPublic"),
   };
+  const values: OnboardingValues = {
+    legalName: raw.legalName,
+    billingAddress: raw.billingAddress,
+    vatNumber: raw.vatNumber,
+    websiteUrl: raw.websiteUrl,
+    logoUrl: raw.logoUrl,
+    description: raw.description,
+    isHiddenFromPublic: raw.isHiddenFromPublic === "on",
+  };
 
   const parsed = OnboardingSchema.safeParse(raw);
   if (!parsed.success) {
@@ -118,6 +127,7 @@ export async function submitOnboardingAction(
       ok: false,
       message: "Please fix the highlighted fields.",
       errors: toErrors(parsed.error),
+      values,
     };
   }
 
@@ -135,6 +145,7 @@ export async function submitOnboardingAction(
           logoFile:
             "Direct logo uploads are not enabled in production yet. Please paste a hosted logo URL.",
         },
+        values,
       };
     }
     if (!(logoFile.type in ALLOWED_LOGO_EXT)) {
@@ -142,6 +153,7 @@ export async function submitOnboardingAction(
         ok: false,
         message: "Please fix the highlighted fields.",
         errors: { logoFile: "Logo must be a PNG, JPG or WEBP image." },
+        values,
       };
     }
     if (logoFile.size > MAX_LOGO_BYTES) {
@@ -149,6 +161,7 @@ export async function submitOnboardingAction(
         ok: false,
         message: "Please fix the highlighted fields.",
         errors: { logoFile: "Logo must be under 2 MB." },
+        values,
       };
     }
     logoUrl = await saveUploadedImage(logoFile, "logos", sponsor.id);

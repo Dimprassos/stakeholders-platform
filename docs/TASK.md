@@ -13,9 +13,10 @@
 > **Multi-agent:** Claude + GLM/Codex both work here — keep *Last touched* current so we
 > don't collide or duplicate work.
 
-**Status:** **Phase C (CRM depth) local implementation verified + Neon migrated**
-(2026-07-09). Phases A + B live; Phase C notes/deliverables/task management is implemented
-locally and ready for push/deploy + browser smoke test. · **Updated:** 2026-07-09 · **By:** Codex
+**Status:** **Phase C pushed; sponsor onboarding validation UX polished** (2026-07-09).
+Phases A + B live; Phase C notes/deliverables/task management is implemented, Neon migrated,
+and pushed. VAT/ΑΦΜ validation is now format-level and the onboarding form keeps typed values
+after validation errors. · **Updated:** 2026-07-09 · **By:** Codex
 **Last verified:** 2026-07-09 (Claude) — prod routes all 200 incl. new `/faq`; no 500s after
 the Neon migration `20260708150000_event_content_and_branding` + push (`main` = `4cfe3c8`).
 Sequence held correctly: migrate Neon → push → Vercel deploy (avoided the Phase A incident).
@@ -29,6 +30,10 @@ SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run
 ---
 
 ## Now / in progress
+- **Onboarding VAT/form UX polish** (Codex, 2026-07-09): user found `123456789`
+  repeatedly failed VAT validation and failed submits could force re-entry. Fixed by relaxing VAT
+  validation to format-level checks, keeping submitted values after server errors, and adding inline
+  VAT feedback.
 - **Phase C — CRM depth handoff** (Codex, 2026-07-09): latest
   `old_sessions/claude_session_last.md` stopped while adding task management to the sponsor
   detail page. Current local work includes sponsor profile detail, private organizer notes,
@@ -38,9 +43,9 @@ SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run
 - **Neon migration applied:** Phase C production database changes are now live in Neon.
 
 ## Next up — Phase C+
-1. Browser-verify `/admin/candidates/[id]`: notes save, deliverables save, task add/toggle/delete.
-2. Commit + push the Phase C code/migrations.
-3. Let Vercel deploy, then smoke-test admin candidate detail in prod.
+1. Commit + push the onboarding VAT/form UX polish.
+2. Browser-verify `/admin/candidates/[id]`: notes save, deliverables save, task add/toggle/delete.
+3. Let Vercel deploy, then smoke-test admin candidate detail + onboarding form in prod.
 
 Phases D–G remain queued in `PLAN.md §16.2` after Phase C is verified.
 
@@ -59,11 +64,11 @@ Phases D–G remain queued in `PLAN.md §16.2` after Phase C is verified.
 - Sponsors could be published without being CONFIRMED → 3-layer fix (query defense +
   action guard + disabled UI) + auto-unpublish on leaving CONFIRMED.
 - Form validation gaps (phone, VAT/ΑΦΜ, no length caps) → `src/lib/validation.ts`
-  (international phone, Greek ΑΦΜ checksum + generic EU VAT, length caps), wired into
-  interest + onboarding forms.
+  (international phone, format-level VAT/TIN checks, length caps), wired into interest +
+  onboarding forms.
 
 ## Blocked / decisions pending
-- Phase C prod deploy now waits only on commit/push + Vercel deploy.
+- Phase C prod deploy is waiting on the latest Vercel build/smoke test.
 - Email permanent fix waits on a **domain purchase** — your call; optional for now.
 
 ## Just landed (full history in `../CHANGELOG.md`)

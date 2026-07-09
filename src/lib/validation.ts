@@ -36,7 +36,7 @@ export function isValidPhone(raw: string): boolean {
   return digits.length >= 7 && digits.length <= 15;
 }
 
-// ---- VAT / ΑΦΜ (Greek checksum, or generic EU format) ----
+// ---- VAT / ΑΦΜ (format-level check; final tax validation is manual) ----
 
 /** Uppercase and drop spaces / dots / dashes. */
 export function normalizeVat(raw: string): string {
@@ -52,22 +52,27 @@ export function isValidGreekAfm(afm: string): boolean {
   return (sum % 11) % 10 === d[8];
 }
 
-/**
- * Empty is allowed (optional). A bare 9-digit number or an `EL`/`GR` prefixed
- * one is validated with the Greek ΑΦΜ checksum; any other 2-letter country
- * prefix is accepted on format alone (generic EU VAT).
- */
-export function isValidVat(raw: string): boolean {
+/** Empty is allowed (optional). Otherwise allow a practical VAT/TIN shape. */
+export function getVatValidationError(raw: string): string | null {
   const v = normalizeVat(raw);
-  if (!v) return true;
-  if (/^\d{9}$/.test(v)) return isValidGreekAfm(v);
-  const m = /^([A-Z]{2})([A-Z0-9]{2,12})$/.exec(v);
-  if (!m) return false;
-  const [, country, body] = m;
-  if (country === "EL" || country === "GR") {
-    return isValidGreekAfm(body);
+  if (!v) return null;
+  if (!/^[A-Z0-9]+$/.test(v)) {
+    return "Use only letters and numbers.";
   }
-  return true;
+  if (v.length < 6) {
+    return "VAT number is too short.";
+  }
+  if (v.length > LIMITS.vatNumber) {
+    return "VAT number is too long.";
+  }
+  if (!/\d/.test(v)) {
+    return "VAT number should include at least one digit.";
+  }
+  return null;
+}
+
+export function isValidVat(raw: string): boolean {
+  return getVatValidationError(raw) === null;
 }
 
 // ---- URL ----
