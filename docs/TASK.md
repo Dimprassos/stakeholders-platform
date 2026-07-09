@@ -13,17 +13,18 @@
 > **Multi-agent:** Claude + GLM/Codex both work here — keep *Last touched* current so we
 > don't collide or duplicate work.
 
-**Status:** **Visitor site theme switcher simplified and verified locally** (2026-07-09).
+**Status:** **Public light theme polish in progress** (2026-07-09).
 Phases A + B live; Phase C notes/deliverables/task management is implemented, Neon migrated,
 and pushed. VAT/ΑΦΜ validation is now format-level and the onboarding form keeps typed values
-after validation errors. Current focus: add a public-site theme switcher for visitors, scoped
-outside the admin CMS. · **Updated:** 2026-07-09 · **By:** Codex
+after validation errors. Current focus: improve the visitor light theme so header, main content,
+cards, and footer have clearer but still soft visual separation. · **Updated:** 2026-07-09 · **By:** Codex
 **Last verified:** 2026-07-09 (Claude) — prod routes all 200 incl. new `/faq`; no 500s after
 the Neon migration `20260708150000_event_content_and_branding` + push (`main` = `4cfe3c8`).
 Sequence held correctly: migrate Neon → push → Vercel deploy (avoided the Phase A incident).
-**Local verified:** 2026-07-09 (Codex) — Prisma validate (SQLite + Postgres schema), local
-SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run lint`,
-`npm run build`, and a temporary Task create/toggle/delete smoke test all passed.
+**Local verified:** 2026-07-09 (Codex) — `npm run typecheck`, `npm run lint`, SQLite
+`prisma validate`, DB-level notes/deliverables/task smoke test, and HTTP smoke checks passed
+(`/`, `/packages`, `/sponsors` → 200; `/admin/candidates` → login redirect). Postgres schema
+validation requires a temporary Postgres `DATABASE_URL` instead of the local SQLite env.
 **Prod DB migrated:** 2026-07-09 (Dimitris) — Neon applied
 `20260709090300_add_sponsor_notes`, `20260709091100_add_sponsor_deliverables`, and
 `20260709093000_add_tasks` successfully.
@@ -31,10 +32,12 @@ SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run
 ---
 
 ## Now / in progress
-- **Visitor theme switcher** (Codex, 2026-07-09): add a header control on the public site
-  so each visitor can choose only System, Light, or Dark. Store the choice locally in the
-  browser and scope it to the public layout only. Light theme is now warmer/Athens-inspired
-  instead of flat white.
+- **Public light theme polish** (Codex, 2026-07-09): soften the light theme with warmer
+  page background, clearer header/footer bands, and better separation so package cards do not
+  blend into the page.
+- **Phase C verification** (Codex, 2026-07-09): working on `main`; no commit/push. Verify
+  `/admin/candidates/[id]` notes, deliverables, and task actions, then re-check onboarding
+  validation UX.
 - **Onboarding VAT/form UX polish** (Codex, 2026-07-09): user found `123456789`
   repeatedly failed VAT validation and failed submits could force re-entry. Fixed by relaxing VAT
   validation to format-level checks, keeping submitted values after server errors, and adding inline
@@ -48,9 +51,10 @@ SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run
 - **Neon migration applied:** Phase C production database changes are now live in Neon.
 
 ## Next up — Phase C+
-1. Commit + push the visitor theme switcher.
-2. Let Vercel deploy, then smoke-test public theme switching.
-3. Smoke-test admin candidate detail + onboarding after deploy.
+1. Browser-verify public light theme on `/` and `/packages` for clearer section/card separation.
+2. Browser-verify `/admin/candidates/[id]`: notes save, deliverables save, task add/toggle/delete.
+   DB-level smoke passed; still needs a real logged-in browser click-through.
+3. Browser-verify onboarding form validation preserves typed values after an error.
 
 Phases D–G remain queued in `PLAN.md §16.2` after Phase C is verified.
 

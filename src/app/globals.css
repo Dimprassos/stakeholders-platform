@@ -13,6 +13,9 @@
     linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(248, 250, 252, 0.86));
   --footer-bg: rgba(15, 23, 42, 0.035);
   --line: rgba(15, 23, 42, 0.1);
+  --surface-bg: rgba(255, 255, 255, 0.64);
+  --surface-shadow: none;
+  --chrome-shadow: none;
   --brand: #f59e0b; /* warm amber-gold — solid fills (buttons, highlights) */
   --brand-ink: #1c1917; /* readable text on the gold fill */
   --brand-accent: #b45309; /* gold accent for text/links on light backgrounds */
@@ -41,6 +44,9 @@
       linear-gradient(180deg, rgba(15, 23, 42, 0.62), rgba(5, 6, 10, 0.9));
     --footer-bg: rgba(255, 255, 255, 0.035);
     --line: rgba(255, 255, 255, 0.11);
+    --surface-bg: rgba(15, 23, 42, 0.46);
+    --surface-shadow: none;
+    --chrome-shadow: none;
     --brand-accent: #fbbf24; /* lighter gold reads better on dark backgrounds */
   }
 }
@@ -51,19 +57,24 @@
    on any element (not just <html>) so the public layout can scope it without
    affecting the admin CMS. See src/app/(public)/layout.tsx. */
 [data-theme="light"] {
-  --background: #fbf7ee;
+  --background: #f5eadb;
   --foreground: #111827;
   --site-bg:
-    radial-gradient(circle at 18% -10%, rgba(147, 197, 253, 0.26), transparent 26rem),
-    radial-gradient(circle at 88% 8%, rgba(251, 191, 36, 0.12), transparent 22rem),
-    linear-gradient(180deg, #fffaf0 0%, #f8fafc 50%, #eef2f7 100%);
-  --chrome-bg: rgba(255, 255, 255, 0.74);
+    radial-gradient(circle at 16% -12%, rgba(191, 219, 254, 0.34), transparent 26rem),
+    radial-gradient(circle at 88% 2%, rgba(250, 204, 21, 0.16), transparent 22rem),
+    linear-gradient(180deg, #efe1ca 0%, #f7eddd 44%, #eadcc8 100%);
+  --chrome-bg: rgba(246, 236, 219, 0.88);
   --main-bg:
-    radial-gradient(circle at 88% 6%, rgba(147, 197, 253, 0.12), transparent 26rem),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.44), rgba(241, 245, 249, 0.82));
+    radial-gradient(circle at 88% 4%, rgba(147, 197, 253, 0.18), transparent 26rem),
+    linear-gradient(180deg, rgba(255, 251, 242, 0.88), rgba(244, 235, 222, 0.92));
   --footer-bg:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.34), rgba(226, 232, 240, 0.72));
-  --line: rgba(15, 23, 42, 0.1);
+    linear-gradient(180deg, rgba(234, 220, 200, 0.78), rgba(219, 203, 179, 0.92));
+  --line: rgba(104, 75, 44, 0.19);
+  --surface-bg: rgba(255, 253, 247, 0.78);
+  --surface-shadow:
+    0 18px 45px rgba(92, 64, 36, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  --chrome-shadow: 0 1px 0 rgba(104, 75, 44, 0.18);
   --brand: #93c5fd;
   --brand-ink: #0f172a;
   --brand-accent: #2563eb;
@@ -100,6 +111,7 @@
 #public-theme-root > header {
   background: var(--chrome-bg);
   border-color: var(--line);
+  box-shadow: var(--chrome-shadow);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
 }
@@ -111,6 +123,11 @@
 
 .public-main-surface {
   background: var(--main-bg);
+}
+
+#public-theme-root[data-theme="light"] .public-main-surface [class*="rounded-lg"][class*="border"] {
+  background-color: var(--surface-bg);
+  box-shadow: var(--surface-shadow);
 }
 
 #public-theme-root *,
