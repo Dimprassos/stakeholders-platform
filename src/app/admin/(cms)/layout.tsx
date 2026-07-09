@@ -6,6 +6,7 @@ import { EventSwitcher } from "./events/event-switcher";
 import { AdminNav } from "./admin-nav";
 import { AdminThemeSwitcher } from "@/components/admin-theme-switcher";
 import { ADMIN_THEME_ROOT_ID } from "@/lib/site-themes";
+import { getReminders } from "@/lib/reminders";
 import { logoutAction } from "@/app/admin/login/actions";
 
 export default async function AdminLayout({
@@ -22,6 +23,7 @@ export default async function AdminLayout({
     listEvents(),
     getAdminEvent(),
   ]);
+  const reminderCount = currentEvent ? (await getReminders(currentEvent.id)).length : 0;
 
   return (
     // Shares the public site's layered theme surfaces via #admin-theme-root
@@ -44,6 +46,16 @@ export default async function AdminLayout({
             </Link>
 
             <div className="flex items-center gap-3">
+              {reminderCount > 0 && (
+                <Link
+                  href="/admin#reminders"
+                  title={`${reminderCount} reminder${reminderCount === 1 ? "" : "s"} need attention`}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
+                >
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                  {reminderCount}
+                </Link>
+              )}
               <AdminThemeSwitcher />
               {currentEvent && (
                 <EventSwitcher

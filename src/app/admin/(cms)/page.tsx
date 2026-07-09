@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAdminEventId } from "@/lib/event";
+import { RemindersPanel } from "./reminders-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,8 @@ export default async function AdminDashboardPage() {
           Sponsorship funnel at a glance.
         </p>
       </div>
+
+      <RemindersPanel eventId={eventId} />
 
       <section>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">

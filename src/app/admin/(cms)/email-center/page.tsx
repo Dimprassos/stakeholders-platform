@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAdminEvent } from "@/lib/event";
+import { TemplateForm } from "./template-form";
+import { DeleteTemplateButton } from "./delete-template-button";
+import { ComposeForm } from "./compose-form";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +61,7 @@ export default async function EmailCenterPage({
     );
   }
 
-  const [allOutreach, outreach, templates] = await Promise.all([
+  const [allOutreach, outreach, templates, recipients] = await Promise.all([
     prisma.outreach.findMany({
       where: { eventId },
       select: { status: true },
@@ -75,6 +78,11 @@ export default async function EmailCenterPage({
     prisma.emailTemplate.findMany({
       where: { eventId },
       orderBy: { createdAt: "asc" },
+    }),
+    prisma.sponsor.findMany({
+      where: { eventId, contactEmail: { not: null } },
+      select: { id: true, companyName: true, contactEmail: true },
+      orderBy: { companyName: "asc" },
     }),
   ]);
 
@@ -119,6 +127,17 @@ export default async function EmailCenterPage({
           </div>
         ))}
       </dl>
+
+      <section className="rounded-xl border border-black/10 bg-white p-5 dark:border-white/10 dark:bg-zinc-900">
+        <h2 className="font-semibold tracking-tight">Compose email</h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          Send a one-off message to a candidate or any address. It&apos;s logged in
+          the history below; in dev you get an Ethereal preview link.
+        </p>
+        <div className="mt-4">
+          <ComposeForm recipients={recipients} templates={templates} />
+        </div>
+      </section>
 
       <section className="rounded-xl border border-black/10 bg-white dark:border-white/10 dark:bg-zinc-900">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 px-5 py-4 dark:border-white/10">
@@ -230,16 +249,25 @@ export default async function EmailCenterPage({
           </span>
         </div>
 
+        <details className="mt-5 rounded-lg border border-dashed border-black/15 p-4 dark:border-white/20">
+          <summary className="cursor-pointer text-sm font-medium text-brand-accent">
+            + New template
+          </summary>
+          <div className="mt-4">
+            <TemplateForm />
+          </div>
+        </details>
+
         {templates.length === 0 ? (
-          <p className="mt-5 rounded-lg border border-dashed border-black/10 p-4 text-sm text-zinc-500 dark:border-white/10">
-            No templates for this event yet.
+          <p className="mt-4 text-sm text-zinc-500">
+            No templates for this event yet — create the first one above.
           </p>
         ) : (
-          <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
             {templates.map((template) => (
               <article
                 key={template.id}
-                className="rounded-lg border border-black/10 p-4 dark:border-white/10"
+                className="flex flex-col rounded-lg border border-black/10 p-4 dark:border-white/10"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -255,6 +283,26 @@ export default async function EmailCenterPage({
                 <pre className="mt-3 max-h-36 overflow-auto whitespace-pre-wrap rounded-md bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-600 dark:bg-zinc-950 dark:text-zinc-400">
                   {template.body}
                 </pre>
+
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs font-medium text-brand-accent hover:underline">
+                    Edit template
+                  </summary>
+                  <div className="mt-3 border-t border-black/10 pt-4 dark:border-white/10">
+                    <TemplateForm
+                      template={{
+                        id: template.id,
+                        name: template.name,
+                        subject: template.subject,
+                        body: template.body,
+                      }}
+                    />
+                  </div>
+                </details>
+
+                <div className="mt-3 flex justify-end border-t border-black/5 pt-3 dark:border-white/10">
+                  <DeleteTemplateButton id={template.id} name={template.name} />
+                </div>
               </article>
             ))}
           </div>

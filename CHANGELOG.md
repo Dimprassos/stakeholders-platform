@@ -1,5 +1,6 @@
 # All commits shown here from last to first and on which branch.
 main branch:
+ed90e56 admin mail event handler
 bb1a6c8 (HEAD -> main, origin/main) FINAL FOR THEMES
 f855c1d Polish onboarding VAT validation
 2d384b9 Add Phase C CRM depth
