@@ -13,10 +13,11 @@
 > **Multi-agent:** Claude + GLM/Codex both work here — keep *Last touched* current so we
 > don't collide or duplicate work.
 
-**Status:** **Phase C pushed; sponsor onboarding validation UX polished** (2026-07-09).
+**Status:** **Visitor site theme switcher implemented and verified locally** (2026-07-09).
 Phases A + B live; Phase C notes/deliverables/task management is implemented, Neon migrated,
 and pushed. VAT/ΑΦΜ validation is now format-level and the onboarding form keeps typed values
-after validation errors. · **Updated:** 2026-07-09 · **By:** Codex
+after validation errors. Current focus: add a public-site theme switcher for visitors, scoped
+outside the admin CMS. · **Updated:** 2026-07-09 · **By:** Codex
 **Last verified:** 2026-07-09 (Claude) — prod routes all 200 incl. new `/faq`; no 500s after
 the Neon migration `20260708150000_event_content_and_branding` + push (`main` = `4cfe3c8`).
 Sequence held correctly: migrate Neon → push → Vercel deploy (avoided the Phase A incident).
@@ -30,6 +31,10 @@ SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run
 ---
 
 ## Now / in progress
+- **Visitor theme switcher** (Codex, 2026-07-09): add a header control on the public site
+  so each visitor can choose System, Light, Dark, Gold, Teal, Ruby, or Emerald. Store the
+  choice locally in the browser and scope it to the public layout only. Local typecheck/lint/build
+  passed.
 - **Onboarding VAT/form UX polish** (Codex, 2026-07-09): user found `123456789`
   repeatedly failed VAT validation and failed submits could force re-entry. Fixed by relaxing VAT
   validation to format-level checks, keeping submitted values after server errors, and adding inline
@@ -43,9 +48,9 @@ SQLite migration applied, Prisma client generated, `npm run typecheck`, `npm run
 - **Neon migration applied:** Phase C production database changes are now live in Neon.
 
 ## Next up — Phase C+
-1. Commit + push the onboarding VAT/form UX polish.
-2. Browser-verify `/admin/candidates/[id]`: notes save, deliverables save, task add/toggle/delete.
-3. Let Vercel deploy, then smoke-test admin candidate detail + onboarding form in prod.
+1. Commit + push the visitor theme switcher.
+2. Let Vercel deploy, then smoke-test public theme switching.
+3. Smoke-test admin candidate detail + onboarding after deploy.
 
 Phases D–G remain queued in `PLAN.md §16.2` after Phase C is verified.
 

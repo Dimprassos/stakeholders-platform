@@ -2,6 +2,7 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { getCurrentEvent } from "@/lib/event";
 import { customBrandVars } from "@/lib/event-content";
+import { PUBLIC_THEME_ROOT_ID } from "@/lib/site-themes";
 
 export default async function PublicLayout({
   children,
@@ -19,7 +20,12 @@ export default async function PublicLayout({
 
   return (
     <div
+      id={PUBLIC_THEME_ROOT_ID}
       data-theme={dataTheme}
+      data-event-theme={dataTheme}
+      data-event-brand={brandVars["--brand"]}
+      data-event-brand-ink={brandVars["--brand-ink"]}
+      data-event-brand-accent={brandVars["--brand-accent"]}
       style={brandVars as React.CSSProperties}
       className="flex min-h-full flex-col bg-background text-foreground"
     >

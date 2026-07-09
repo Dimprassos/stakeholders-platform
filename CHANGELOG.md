@@ -1,6 +1,9 @@
 # All commits shown here from last to first and on which branch.
 main branch:
-9616012 (HEAD -> main, sponsor/main, origin/main) docs: note Vercel git-repoint verification in progress
+f855c1d (HEAD -> main, origin/main) Polish onboarding VAT validation
+2d384b9 Add Phase C CRM depth
+285f451 docs: mark Phase B deployed (2026-07-09); start Phase C
+9616012 docs: note Vercel git-repoint verification in progress
 50cdb86 feat: validation polish
 ed1cd73 bug: published state not logical, fixed it and added 3 layers of protection
 809bcca fixed a bug where slots wouldnt decrease when selected, added extra layer
@@ -27,4 +30,5 @@ bbdee9c feat: multi-event query-scoping + admin event switcher (Phase A step 2)
 833c29c feat: multi-event foundation — Event model + eventId scoping (Phase A step 1)
 
 event-content-branding
-95eec84 (HEAD -> event-content-branding) feat: event content & branding (Phase B) — FAQ, deadlines, theme, logo/banner 
+4cfe3c8 (HEAD ->event-content-branding) docs: changelog note for Phase B deploy
+95eec84 (event-content-branding) feat: event content & branding (Phase B) — FAQ, deadlines, theme, logo/banner 

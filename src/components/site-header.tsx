@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NavLink } from "@/components/nav-link";
+import { SiteThemeSwitcher } from "@/components/site-theme-switcher";
 import { getCurrentEvent } from "@/lib/event";
 
 const NAV = [
@@ -39,6 +40,7 @@ export async function SiteHeader() {
           >
             Become a sponsor
           </NavLink>
+          <SiteThemeSwitcher />
         </nav>
       </div>
     </header>
