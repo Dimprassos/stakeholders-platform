@@ -75,6 +75,7 @@ export type Analytics = {
   pending: {
     awaitingReview: number;
     newSubmissions: number;
+    unreadReplies: number;
     openTasks: number;
     overdueTasks: number;
   };
@@ -104,8 +105,15 @@ function bump(map: Map<string, RevenueByCurrency>, currency: string): RevenueByC
 export const getAnalytics = cache(async (eventId: string): Promise<Analytics> => {
   const today = new Date().toISOString().slice(0, 10);
 
-  const [sponsors, packages, paidPayments, newSubmissions, openTasks, overdueTasks] =
-    await Promise.all([
+  const [
+    sponsors,
+    packages,
+    paidPayments,
+    newSubmissions,
+    unreadReplies,
+    openTasks,
+    overdueTasks,
+  ] = await Promise.all([
       prisma.sponsor.findMany({
         where: { eventId },
         select: {
@@ -131,6 +139,9 @@ export const getAnalytics = cache(async (eventId: string): Promise<Analytics> =>
         select: { amountCents: true, currency: true },
       }),
       prisma.submission.count({ where: { eventId, status: "NEW" } }),
+      prisma.outreach.count({
+        where: { eventId, direction: "INBOUND", readAt: null },
+      }),
       prisma.task.count({ where: { eventId, done: false } }),
       prisma.task.count({
         where: { eventId, done: false, dueDate: { not: null, lt: today } },
@@ -231,6 +242,7 @@ export const getAnalytics = cache(async (eventId: string): Promise<Analytics> =>
     pending: {
       awaitingReview: statusCount.get("DETAILS_SUBMITTED") ?? 0,
       newSubmissions,
+      unreadReplies,
       openTasks,
       overdueTasks,
     },

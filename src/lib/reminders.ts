@@ -42,7 +42,15 @@ export const getReminders = cache(async (eventId: string): Promise<Reminder[]> =
   const now = new Date();
   const in7date = new Date(Date.now() + 7 * 86_400_000);
 
-  const [tasks, awaitingReview, invites, event] = await Promise.all([
+  const [
+    tasks,
+    awaitingReview,
+    invites,
+    unreadReplies,
+    pendingPayments,
+    unsignedContracts,
+    event,
+  ] = await Promise.all([
     prisma.task.findMany({
       where: { eventId, done: false, dueDate: { not: null } },
       select: {
@@ -60,6 +68,41 @@ export const getReminders = cache(async (eventId: string): Promise<Reminder[]> =
     prisma.sponsor.findMany({
       where: { eventId, status: "INVITE_SENT", tokenExpiresAt: { not: null } },
       select: { id: true, companyName: true, tokenExpiresAt: true },
+    }),
+    prisma.outreach.findMany({
+      where: { eventId, direction: "INBOUND", readAt: null },
+      select: {
+        id: true,
+        subject: true,
+        sponsorId: true,
+        prospectEmail: true,
+        sponsor: { select: { companyName: true } },
+      },
+      orderBy: { receivedAt: "desc" },
+      take: 10,
+    }),
+    prisma.payment.findMany({
+      where: { eventId, status: "PENDING" },
+      select: {
+        id: true,
+        sponsorId: true,
+        amountCents: true,
+        currency: true,
+        sponsor: { select: { companyName: true } },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 10,
+    }),
+    prisma.contract.findMany({
+      where: { eventId, status: "SENT" },
+      select: {
+        id: true,
+        sponsorId: true,
+        title: true,
+        sponsor: { select: { companyName: true } },
+      },
+      orderBy: { updatedAt: "asc" },
+      take: 10,
     }),
     prisma.event.findUnique({ where: { id: eventId }, select: { deadlines: true } }),
   ]);
@@ -134,6 +177,42 @@ export const getReminders = cache(async (eventId: string): Promise<Reminder[]> =
         tone: "amber",
       });
     }
+  }
+
+  for (const msg of unreadReplies) {
+    reminders.push({
+      id: `reply-${msg.id}`,
+      title: `Unread reply: ${msg.subject}`,
+      detail: msg.sponsor?.companyName ?? msg.prospectEmail ?? "Unknown sender",
+      href: msg.sponsorId
+        ? `/admin/candidates/${msg.sponsorId}`
+        : "/admin/email-center?status=UNREAD",
+      tone: "blue",
+    });
+  }
+
+  for (const p of pendingPayments) {
+    reminders.push({
+      id: `payment-${p.id}`,
+      title: `Payment pending: ${p.sponsor.companyName}`,
+      detail: new Intl.NumberFormat("en-IE", {
+        style: "currency",
+        currency: p.currency,
+        maximumFractionDigits: 0,
+      }).format(p.amountCents / 100),
+      href: `/admin/candidates/${p.sponsorId}`,
+      tone: "amber",
+    });
+  }
+
+  for (const c of unsignedContracts) {
+    reminders.push({
+      id: `contract-${c.id}`,
+      title: `Contract awaiting signature: ${c.sponsor.companyName}`,
+      detail: c.title,
+      href: `/admin/candidates/${c.sponsorId}`,
+      tone: "amber",
+    });
   }
 
   reminders.sort((a, b) => TONE_RANK[a.tone] - TONE_RANK[b.tone]);

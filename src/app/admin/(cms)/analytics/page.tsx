@@ -202,7 +202,7 @@ export default async function AnalyticsPage() {
       {/* Pending work */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Needs attention</h2>
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           <PendingCard
             label="Awaiting review"
             value={a.pending.awaitingReview}
@@ -214,6 +214,12 @@ export default async function AnalyticsPage() {
             value={a.pending.newSubmissions}
             href="/admin/submissions"
             tone={a.pending.newSubmissions > 0 ? "text-blue-700 dark:text-blue-400" : undefined}
+          />
+          <PendingCard
+            label="Unread replies"
+            value={a.pending.unreadReplies}
+            href="/admin/email-center?status=UNREAD"
+            tone={a.pending.unreadReplies > 0 ? "text-blue-700 dark:text-blue-400" : undefined}
           />
           <PendingCard
             label="Open tasks"

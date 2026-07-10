@@ -48,7 +48,7 @@ export default async function AdminLayout({
             <div className="flex items-center gap-3">
               {reminderCount > 0 && (
                 <Link
-                  href="/admin#reminders"
+                  href="/admin/notifications"
                   title={`${reminderCount} reminder${reminderCount === 1 ? "" : "s"} need attention`}
                   className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 transition-colors hover:bg-amber-500/20 dark:text-amber-400"
                 >

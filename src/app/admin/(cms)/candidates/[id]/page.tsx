@@ -6,6 +6,7 @@ import { tierLabel, formatPrice } from "@/lib/format";
 import { parseDeliverables, deliverableProgress } from "@/lib/deliverables";
 import { isStripeConfigured } from "@/lib/stripe";
 import { CONTRACT_STATUS_LABEL, defaultContractBody } from "@/lib/contracts";
+import { threadParam } from "@/lib/communication";
 import { ActionForm } from "../../action-form";
 import { toggleTaskAction, deleteTaskAction } from "../actions";
 import {
@@ -20,6 +21,11 @@ import {
   reopenContractAction,
   deleteContractAction,
 } from "./contract-actions";
+import {
+  logInboundReplyAction,
+  markReplyReadAction,
+  markSponsorRepliesReadAction,
+} from "./communication-actions";
 import { NotesForm } from "./notes-form";
 import { DeliverablesForm } from "./deliverables-form";
 import { AddTaskForm } from "./add-task-form";
@@ -55,6 +61,11 @@ const CONTRACT_TONE: Record<string, string> = {
   DRAFT: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
   SENT: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
   SIGNED: "bg-green-100 text-green-700 dark:bg-green-950 dark:text-green-400",
+};
+
+const DIRECTION_TONE: Record<string, string> = {
+  OUTBOUND: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+  INBOUND: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
 };
 
 function Detail({ label, value }: { label: string; value: string | null | undefined }) {
@@ -114,6 +125,8 @@ export default async function SponsorDetailPage({
     typeof sp.contractSent === "string" ? sp.contractSent : null;
   const contractSaved = sp.consaved === "1";
   const contractBodyErr = sp.conerr === "body";
+  const replyLogged = sp.replyLogged === "1";
+  const communicationBodyErr = sp.commerr === "body";
   const mailPreview = typeof sp.preview === "string" ? sp.preview : null;
   const eventId = await getAdminEventId();
   const event = await getAdminEvent();
@@ -180,6 +193,16 @@ export default async function SponsorDetailPage({
         : null,
     });
   const contractLocked = editableContract?.status === "SENT";
+
+  const communications = await prisma.outreach.findMany({
+    where: { sponsorId: sponsor.id, eventId },
+    include: { template: { select: { name: true } } },
+    orderBy: { createdAt: "desc" },
+    take: 12,
+  });
+  const unreadReplies = communications.filter(
+    (m) => m.direction === "INBOUND" && !m.readAt,
+  ).length;
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -290,6 +313,16 @@ export default async function SponsorDetailPage({
           not be sent.
         </div>
       )}
+      {communicationBodyErr && (
+        <div className="rounded-xl border border-red-600/30 bg-red-600/5 p-3 text-sm text-red-700 dark:text-red-400">
+          Add the reply text before logging an inbound message.
+        </div>
+      )}
+      {replyLogged && (
+        <div className="rounded-xl border border-green-600/30 bg-green-600/5 p-3 text-sm text-green-700 dark:text-green-400">
+          Inbound reply logged in the communication timeline.
+        </div>
+      )}
 
       {/* Profile */}
       <section className="rounded-xl border border-black/10 p-6 dark:border-white/10">
@@ -333,6 +366,156 @@ export default async function SponsorDetailPage({
               className="max-h-16 max-w-[12rem] object-contain"
             />
           </div>
+        )}
+      </section>
+
+      {/* Communication timeline */}
+      <section className="rounded-xl border border-black/10 p-6 dark:border-white/10">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
+              Communication
+            </h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Sent emails plus manually logged inbound replies for this sponsor.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {unreadReplies > 0 && (
+              <span className="rounded-full bg-blue-600/10 px-2.5 py-1 text-xs font-medium text-blue-700 dark:text-blue-400">
+                {unreadReplies} unread
+              </span>
+            )}
+            {unreadReplies > 0 && (
+              <ActionForm action={markSponsorRepliesReadAction} className="flex">
+                <input type="hidden" name="sponsorId" value={sponsor.id} />
+                <button
+                  type="submit"
+                  className="rounded-full border border-black/15 px-3 py-1 text-xs font-medium transition-colors hover:border-foreground dark:border-white/20"
+                >
+                  Mark all read
+                </button>
+              </ActionForm>
+            )}
+          </div>
+        </div>
+
+        <details className="mt-4 rounded-lg border border-dashed border-black/15 p-4 dark:border-white/20">
+          <summary className="cursor-pointer text-sm font-medium text-brand-accent">
+            Log inbound reply
+          </summary>
+          <form action={logInboundReplyAction} className="mt-4 space-y-3">
+            <input type="hidden" name="sponsorId" value={sponsor.id} />
+            <label className="block text-xs font-medium text-zinc-500">
+              Subject
+              <input
+                name="subject"
+                type="text"
+                maxLength={200}
+                placeholder={`Reply from ${sponsor.companyName}`}
+                className="mt-1 w-full rounded-lg border border-black/15 bg-transparent px-3 py-1.5 text-sm text-foreground dark:border-white/20"
+              />
+            </label>
+            <label className="block text-xs font-medium text-zinc-500">
+              Reply text
+              <textarea
+                name="body"
+                required
+                rows={4}
+                maxLength={5000}
+                placeholder="Paste the sponsor's email reply here."
+                className="mt-1 w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm leading-6 text-foreground dark:border-white/20"
+              />
+            </label>
+            <button
+              type="submit"
+              className="rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Log reply
+            </button>
+          </form>
+        </details>
+
+        {communications.length === 0 ? (
+          <p className="mt-4 text-sm text-zinc-500">
+            No communication logged yet. Sent invites, payment requests, contracts,
+            custom emails and inbound replies will appear here.
+          </p>
+        ) : (
+          <ol className="mt-5 space-y-3">
+            {communications.map((m) => {
+              const inbound = m.direction === "INBOUND";
+              const unread = inbound && !m.readAt;
+              const happenedAt = m.receivedAt ?? m.sentAt ?? m.createdAt;
+              return (
+                <li
+                  key={m.id}
+                  className={`rounded-lg border p-4 ${
+                    unread
+                      ? "border-blue-600/30 bg-blue-600/5"
+                      : "border-black/10 dark:border-white/10"
+                  }`}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            DIRECTION_TONE[m.direction] ?? DIRECTION_TONE.OUTBOUND
+                          }`}
+                        >
+                          {inbound ? "Inbound" : "Outbound"}
+                        </span>
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            STATUS_TONE[m.status] ?? STATUS_TONE.DRAFT
+                          }`}
+                        >
+                          {m.status.charAt(0) + m.status.slice(1).toLowerCase()}
+                        </span>
+                        {unread && (
+                          <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+                            New
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="mt-2 text-sm font-medium">{m.subject}</h3>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-600 dark:text-zinc-400">
+                        {m.body}
+                      </p>
+                      {m.template?.name && (
+                        <p className="mt-2 text-xs text-zinc-500">
+                          Template: {m.template.name}
+                        </p>
+                      )}
+                      <Link
+                        href={`/admin/email-center/threads/${sponsor.id}?subject=${threadParam(
+                          m.subject,
+                        )}`}
+                        className="mt-2 inline-block text-xs text-zinc-500 underline underline-offset-4 hover:text-foreground"
+                      >
+                        View thread →
+                      </Link>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-zinc-500">{fmtDateTime(happenedAt)}</p>
+                      {unread && (
+                        <ActionForm action={markReplyReadAction} className="mt-2 flex justify-end">
+                          <input type="hidden" name="messageId" value={m.id} />
+                          <button
+                            type="submit"
+                            className="text-xs text-zinc-500 underline underline-offset-4 hover:text-foreground"
+                          >
+                            Mark read
+                          </button>
+                        </ActionForm>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
         )}
       </section>
 

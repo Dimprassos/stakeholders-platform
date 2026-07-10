@@ -1,6 +1,7 @@
 # All commits shown here from last to first and on which branch.
 main branch:
-31a2cb3 (HEAD -> main, origin/main) feat: analytics section added for admin
+c8a5692 (HEAD -> main, origin/main) feat: payments & contracts added plus also sponsors can now log in
+31a2cb3 feat: analytics section added for admin
 ed90e56 admin mail event handler
 bb1a6c8 FINAL FOR THEMES
 f855c1d Polish onboarding VAT validation

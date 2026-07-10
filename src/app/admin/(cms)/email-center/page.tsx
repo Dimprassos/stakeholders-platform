@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAdminEvent } from "@/lib/event";
+import { groupThreads, threadParam } from "@/lib/communication";
 import { TemplateForm } from "./template-form";
 import { DeleteTemplateButton } from "./delete-template-button";
 import { ComposeForm } from "./compose-form";
@@ -21,7 +22,12 @@ const STATUS_TONE: Record<string, string> = {
   REPLIED: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
 };
 
-const FILTERS = ["ALL", "SENT", "DRAFT", "REPLIED", "BOUNCED"] as const;
+const DIRECTION_TONE: Record<string, string> = {
+  OUTBOUND: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+  INBOUND: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+};
+
+const FILTERS = ["ALL", "UNREAD", "SENT", "DRAFT", "REPLIED", "BOUNCED"] as const;
 
 function fmtDateTime(d: Date | null | undefined): string {
   if (!d) return "—";
@@ -42,6 +48,14 @@ function countByStatus(rows: { status: string }[], status: string): number {
   return rows.filter((row) => row.status === status).length;
 }
 
+function countInbound(rows: { direction: string }[]): number {
+  return rows.filter((row) => row.direction === "INBOUND").length;
+}
+
+function countUnread(rows: { direction: string; readAt: Date | null }[]): number {
+  return rows.filter((row) => row.direction === "INBOUND" && !row.readAt).length;
+}
+
 export default async function EmailCenterPage({
   searchParams,
 }: {
@@ -50,8 +64,11 @@ export default async function EmailCenterPage({
   const event = await getAdminEvent();
   const eventId = event?.id;
   const { status } = await searchParams;
+  const unreadFilter = status === "UNREAD";
   const statusFilter =
-    status && FILTERS.includes(status as never) && status !== "ALL" ? status : undefined;
+    status && FILTERS.includes(status as never) && !["ALL", "UNREAD"].includes(status)
+      ? status
+      : undefined;
 
   if (!eventId) {
     return (
@@ -61,19 +78,39 @@ export default async function EmailCenterPage({
     );
   }
 
-  const [allOutreach, outreach, templates, recipients] = await Promise.all([
+  const [allOutreach, outreach, threadRows, templates, recipients] = await Promise.all([
     prisma.outreach.findMany({
       where: { eventId },
-      select: { status: true },
+      select: { status: true, direction: true, readAt: true },
     }),
     prisma.outreach.findMany({
-      where: { eventId, ...(statusFilter ? { status: statusFilter } : {}) },
+      where: {
+        eventId,
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(unreadFilter ? { direction: "INBOUND", readAt: null } : {}),
+      },
       include: {
         sponsor: { select: { id: true, companyName: true, contactEmail: true } },
         template: { select: { name: true } },
       },
       orderBy: [{ sentAt: "desc" }, { createdAt: "desc" }],
       take: 50,
+    }),
+    prisma.outreach.findMany({
+      where: { eventId, sponsorId: { not: null } },
+      select: {
+        id: true,
+        sponsorId: true,
+        subject: true,
+        direction: true,
+        readAt: true,
+        sentAt: true,
+        receivedAt: true,
+        createdAt: true,
+        sponsor: { select: { id: true, companyName: true, contactEmail: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 200,
     }),
     prisma.emailTemplate.findMany({
       where: { eventId },
@@ -89,9 +126,10 @@ export default async function EmailCenterPage({
   const statCards = [
     { label: "Total messages", value: allOutreach.length },
     { label: "Sent", value: countByStatus(allOutreach, "SENT") },
-    { label: "Replies logged", value: countByStatus(allOutreach, "REPLIED") },
-    { label: "Bounced", value: countByStatus(allOutreach, "BOUNCED") },
+    { label: "Inbound replies", value: countInbound(allOutreach) },
+    { label: "Unread replies", value: countUnread(allOutreach) },
   ];
+  const threads = groupThreads(threadRows).slice(0, 12);
 
   return (
     <div className="space-y-8">
@@ -102,8 +140,8 @@ export default async function EmailCenterPage({
           </p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight">Email Center</h1>
           <p className="mt-1 max-w-2xl text-sm text-zinc-600 dark:text-zinc-400">
-            Per-event communication history and reusable templates. This first Phase D
-            slice reads the outreach logs created when invites are sent.
+            Per-event communication history, reusable templates, and manually logged
+            inbound sponsor replies.
           </p>
         </div>
         <Link
@@ -142,6 +180,57 @@ export default async function EmailCenterPage({
       <section className="rounded-xl border border-black/10 bg-white dark:border-white/10 dark:bg-zinc-900">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 px-5 py-4 dark:border-white/10">
           <div>
+            <h2 className="font-semibold tracking-tight">Threads</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              Sponsor conversations grouped by recipient and subject.
+            </p>
+          </div>
+          <span className="rounded-full bg-zinc-100 px-3 py-1 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            {threads.length} active
+          </span>
+        </div>
+
+        {threads.length === 0 ? (
+          <p className="p-6 text-sm text-zinc-500">
+            No sponsor threads yet. Send or receive a sponsor email to start one.
+          </p>
+        ) : (
+          <ul className="divide-y divide-black/5 dark:divide-white/5">
+            {threads.map((thread) => (
+              <li key={`${thread.sponsorId}:${thread.key}`}>
+                <Link
+                  href={`/admin/email-center/threads/${thread.sponsorId}?subject=${threadParam(
+                    thread.subject,
+                  )}`}
+                  className="flex flex-wrap items-center justify-between gap-4 px-5 py-4 text-sm transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <span>
+                    <span className="font-medium">{thread.subject}</span>
+                    <span className="mt-0.5 block text-xs text-zinc-500">
+                      {thread.sponsorName}
+                      {thread.sponsorEmail ? ` · ${thread.sponsorEmail}` : ""}
+                    </span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="text-xs text-zinc-500">
+                      {thread.total} message{thread.total === 1 ? "" : "s"}
+                    </span>
+                    {thread.unread > 0 && (
+                      <span className="rounded-full bg-blue-600 px-2 py-0.5 text-xs font-medium text-white">
+                        {thread.unread} new
+                      </span>
+                    )}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-black/10 bg-white dark:border-white/10 dark:bg-zinc-900">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 px-5 py-4 dark:border-white/10">
+          <div>
             <h2 className="font-semibold tracking-tight">Outreach history</h2>
             <p className="mt-1 text-xs text-zinc-500">
               Latest 50 messages for the selected event.
@@ -149,9 +238,18 @@ export default async function EmailCenterPage({
           </div>
           <nav aria-label="Email status filters" className="flex flex-wrap gap-2">
             {FILTERS.map((filter) => {
-              const active = (statusFilter ?? "ALL") === filter;
+              const active =
+                filter === "UNREAD"
+                  ? unreadFilter
+                  : !unreadFilter && (statusFilter ?? "ALL") === filter;
               const href =
                 filter === "ALL" ? "/admin/email-center" : `/admin/email-center?status=${filter}`;
+              const label =
+                filter === "ALL"
+                  ? "All"
+                  : filter === "UNREAD"
+                    ? "Unread"
+                    : statusLabel(filter);
               return (
                 <Link
                   key={filter}
@@ -162,7 +260,7 @@ export default async function EmailCenterPage({
                       : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
                   }`}
                 >
-                  {filter === "ALL" ? "All" : statusLabel(filter)}
+                  {label}
                 </Link>
               );
             })}
@@ -182,8 +280,8 @@ export default async function EmailCenterPage({
                   <th className="px-4 py-3 font-medium">Recipient</th>
                   <th className="px-4 py-3 font-medium">Subject</th>
                   <th className="px-4 py-3 font-medium">Template</th>
-                  <th className="px-4 py-3 font-medium">Status</th>
-                  <th className="px-4 py-3 font-medium">Sent</th>
+                  <th className="px-4 py-3 font-medium">Direction</th>
+                  <th className="px-4 py-3 font-medium">Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5 dark:divide-white/5">
@@ -217,14 +315,26 @@ export default async function EmailCenterPage({
                       <td className="px-4 py-3">
                         <span
                           className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                            DIRECTION_TONE[item.direction] ?? DIRECTION_TONE.OUTBOUND
+                          }`}
+                        >
+                          {item.direction === "INBOUND" ? "Inbound" : "Outbound"}
+                        </span>
+                        <span
+                          className={`ml-2 rounded-full px-2.5 py-0.5 text-xs font-medium ${
                             STATUS_TONE[item.status] ?? STATUS_TONE.DRAFT
                           }`}
                         >
                           {statusLabel(item.status)}
                         </span>
+                        {item.direction === "INBOUND" && !item.readAt && (
+                          <span className="ml-2 rounded-full bg-blue-600 px-2.5 py-0.5 text-xs font-medium text-white">
+                            New
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-zinc-500">
-                        {fmtDateTime(item.sentAt ?? item.createdAt)}
+                        {fmtDateTime(item.receivedAt ?? item.sentAt ?? item.createdAt)}
                       </td>
                     </tr>
                   );

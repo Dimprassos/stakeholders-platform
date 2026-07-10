@@ -172,11 +172,15 @@ model Outreach {
   template      EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   subject       String
   body          String
+  direction     String         @default("OUTBOUND") // OUTBOUND | INBOUND
   status        String         @default("DRAFT") // DRAFT | SENT | BOUNCED | REPLIED
   sentAt        DateTime?
+  receivedAt    DateTime?
+  readAt        DateTime?
   createdAt     DateTime       @default(now())
 
   @@index([eventId])
+  @@index([sponsorId])
 }
 
 /// Reusable email template with merge fields (rendered at send time).

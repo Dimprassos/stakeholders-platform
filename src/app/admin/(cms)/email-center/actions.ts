@@ -1,11 +1,13 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getAdminEventId, getEventSettings } from "@/lib/event";
 import { sendMail } from "@/lib/email";
 import { renderTemplate } from "@/lib/template";
 import { SITE_URL } from "@/lib/site";
+import { normalizeSubject } from "@/lib/communication";
 import type { ComposeState, TemplateFormState } from "./types";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -166,6 +168,7 @@ export async function sendComposedEmailAction(
       prospectEmail: to,
       subject,
       body: text,
+      direction: "OUTBOUND",
       status: "SENT",
       sentAt: new Date(),
     },
@@ -173,4 +176,37 @@ export async function sendComposedEmailAction(
 
   revalidatePath("/admin/email-center");
   return { ok: true, message: `Email sent to ${to}.`, previewUrl };
+}
+
+export async function markThreadReadAction(formData: FormData): Promise<void> {
+  const sponsorId = str(formData, "sponsorId");
+  const subjectKey = str(formData, "subjectKey");
+  const returnTo = str(formData, "returnTo");
+  if (!sponsorId || !subjectKey) return;
+
+  const eventId = await getAdminEventId();
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id: sponsorId, eventId },
+    select: { id: true },
+  });
+  if (!sponsor) return;
+
+  const unread = await prisma.outreach.findMany({
+    where: { eventId, sponsorId, direction: "INBOUND", readAt: null },
+    select: { id: true, subject: true },
+  });
+  const ids = unread
+    .filter((m) => normalizeSubject(m.subject) === subjectKey)
+    .map((m) => m.id);
+
+  if (ids.length > 0) {
+    await prisma.outreach.updateMany({
+      where: { id: { in: ids } },
+      data: { readAt: new Date() },
+    });
+  }
+
+  revalidatePath("/admin/email-center");
+  revalidatePath(`/admin/candidates/${sponsorId}`);
+  if (returnTo.startsWith("/admin/email-center/threads/")) redirect(returnTo);
 }
