@@ -72,6 +72,8 @@ model Event {
   templates   EmailTemplate[]
   outreach    Outreach[]
   tasks       Task[]
+  payments    Payment[]
+  contracts   Contract[]
 }
 
 /// A sponsorship package / tier shown on the public packages page.
@@ -129,6 +131,10 @@ model Sponsor {
   billingAddress     String?
   vatNumber          String?
 
+  // Sponsor account (docs/PLAN.md §16 Phase E). Optional: set by the sponsor
+  // from their magic-link portal to enable email + password login afterwards.
+  passwordHash       String?
+
   // Organizer CRM (docs/PLAN.md §16 Phase C): private notes about this sponsor.
   notes              String?
   // Deliverables checklist state, JSON object `{ [key]: true }` (see src/lib/deliverables.ts).
@@ -137,8 +143,10 @@ model Sponsor {
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  outreach Outreach[]
-  tasks    Task[]
+  outreach  Outreach[]
+  tasks     Task[]
+  payments  Payment[]
+  contracts Contract[]
 
   @@index([eventId])
 }
@@ -210,6 +218,54 @@ model Task {
   done      Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([sponsorId])
+}
+
+/// A sponsorship contract for e-signature (docs/PLAN.md §16 Phase F). The admin
+/// drafts it and sends it; the sponsor reads and signs it from their portal
+/// (typed name + agreement recorded with timestamp/IP as proof).
+model Contract {
+  id         String    @id @default(cuid())
+  eventId    String
+  event      Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sponsorId  String
+  sponsor    Sponsor   @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  title      String
+  body       String
+  status     String    @default("DRAFT") // DRAFT | SENT | SIGNED
+  signedName String? // typed full name of the signer
+  signedAt   DateTime?
+  signedIp   String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([eventId])
+  @@index([sponsorId])
+}
+
+/// A payment request against a sponsor (docs/PLAN.md §16 Phase F). The admin
+/// raises it for an amount; the sponsor pays via Stripe Checkout from their
+/// magic-link portal, and the webhook marks it PAID. Admins can also mark a
+/// payment paid/cancelled manually for offline settlements.
+model Payment {
+  id                    String    @id @default(cuid())
+  eventId               String
+  event                 Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  sponsorId             String
+  sponsor               Sponsor   @relation(fields: [sponsorId], references: [id], onDelete: Cascade)
+  amountCents           Int
+  currency              String    @default("EUR")
+  description           String?
+  status                String    @default("PENDING") // PENDING | PAID | CANCELLED | REFUNDED
+  method                String? // stripe | manual (how it was settled)
+  stripeSessionId       String?   @unique
+  stripePaymentIntentId String?
+  receiptUrl            String?
+  paidAt                DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
   @@index([eventId])
   @@index([sponsorId])

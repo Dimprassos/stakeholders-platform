@@ -1,7 +1,8 @@
 # All commits shown here from last to first and on which branch.
 main branch:
+31a2cb3 (HEAD -> main, origin/main) feat: analytics section added for admin
 ed90e56 admin mail event handler
-bb1a6c8 (HEAD -> main, origin/main) FINAL FOR THEMES
+bb1a6c8 FINAL FOR THEMES
 f855c1d Polish onboarding VAT validation
 2d384b9 Add Phase C CRM depth
 285f451 docs: mark Phase B deployed (2026-07-09); start Phase C

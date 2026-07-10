@@ -40,6 +40,8 @@ export type RevenueByCurrency = {
   committedCents: number;
   pipelineCents: number;
   potentialCents: number;
+  /** Actually collected via paid payments (docs/PLAN.md §16 Phase F). */
+  collectedCents: number;
 };
 
 export type TierBreakdown = {
@@ -87,7 +89,13 @@ type SponsorRow = {
 function bump(map: Map<string, RevenueByCurrency>, currency: string): RevenueByCurrency {
   let row = map.get(currency);
   if (!row) {
-    row = { currency, committedCents: 0, pipelineCents: 0, potentialCents: 0 };
+    row = {
+      currency,
+      committedCents: 0,
+      pipelineCents: 0,
+      potentialCents: 0,
+      collectedCents: 0,
+    };
     map.set(currency, row);
   }
   return row;
@@ -96,7 +104,7 @@ function bump(map: Map<string, RevenueByCurrency>, currency: string): RevenueByC
 export const getAnalytics = cache(async (eventId: string): Promise<Analytics> => {
   const today = new Date().toISOString().slice(0, 10);
 
-  const [sponsors, packages, newSubmissions, openTasks, overdueTasks] =
+  const [sponsors, packages, paidPayments, newSubmissions, openTasks, overdueTasks] =
     await Promise.all([
       prisma.sponsor.findMany({
         where: { eventId },
@@ -117,6 +125,10 @@ export const getAnalytics = cache(async (eventId: string): Promise<Analytics> =>
           priceCents: true,
           slotsTotal: true,
         },
+      }),
+      prisma.payment.findMany({
+        where: { eventId, status: "PAID" },
+        select: { amountCents: true, currency: true },
       }),
       prisma.submission.count({ where: { eventId, status: "NEW" } }),
       prisma.task.count({ where: { eventId, done: false } }),
@@ -157,6 +169,9 @@ export const getAnalytics = cache(async (eventId: string): Promise<Analytics> =>
     if (COMMITTED.includes(s.status)) row.committedCents += s.package.priceCents;
     else if (PIPELINE_REVENUE.includes(s.status)) row.pipelineCents += s.package.priceCents;
     else if (POTENTIAL_REVENUE.includes(s.status)) row.potentialCents += s.package.priceCents;
+  }
+  for (const p of paidPayments) {
+    bump(revenueMap, p.currency).collectedCents += p.amountCents;
   }
   const revenue = [...revenueMap.values()].sort(
     (a, b) => b.committedCents - a.committedCents,

@@ -35,6 +35,12 @@ export async function SiteHeader() {
             </NavLink>
           ))}
           <NavLink
+            href="/sponsor/login"
+            className="text-zinc-600 transition-colors hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-brand-accent dark:text-zinc-400"
+          >
+            Sponsor login
+          </NavLink>
+          <NavLink
             href="/become-a-sponsor"
             className="rounded-full bg-brand px-4 py-2 text-xs font-medium text-brand-ink transition-opacity hover:opacity-90"
           >

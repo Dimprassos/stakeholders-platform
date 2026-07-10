@@ -28,6 +28,7 @@ export async function SiteFooter() {
             Become a sponsor
           </a>{" "}
           · <a href="/faq" className="underline underline-offset-4 hover:text-foreground">FAQ</a>
+          {" "}· <a href="/sponsor/login" className="underline underline-offset-4 hover:text-foreground">Sponsor login</a>
           {event?.mapUrl && (
             <>
               {" "}
