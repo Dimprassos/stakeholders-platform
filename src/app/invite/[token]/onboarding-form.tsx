@@ -25,6 +25,7 @@ function toInitialValues(initial: OnboardingFormProps["initial"]): OnboardingVal
 
 type OnboardingFormProps = {
   token: string;
+  returnTo?: string;
   allowFileUpload?: boolean;
   initial?: {
     legalName: string;
@@ -39,6 +40,7 @@ type OnboardingFormProps = {
 
 export function OnboardingForm({
   token,
+  returnTo,
   initial,
   allowFileUpload = true,
 }: OnboardingFormProps) {
@@ -65,6 +67,7 @@ export function OnboardingForm({
   return (
     <form action={formAction} className="space-y-6" noValidate>
       <input type="hidden" name="token" value={token} />
+      {returnTo && <input type="hidden" name="returnTo" value={returnTo} />}
 
       {state.message && (
         <p className="rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">

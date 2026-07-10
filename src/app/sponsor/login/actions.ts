@@ -2,14 +2,13 @@
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
-import { getCurrentEventId } from "@/lib/event";
 import {
   createSponsorSession,
   clearSponsorSession,
   ensurePortalToken,
 } from "@/lib/sponsor-auth";
 import {
-  findSponsorsByContactEmail,
+  findSponsorAccountsByEmail,
   isSponsorAccountStatus,
   normalizeContactEmail,
 } from "@/lib/sponsor-identity";
@@ -36,8 +35,8 @@ export async function loginSponsorAction(
     return { ok: false, message: "Please fix the highlighted fields.", errors };
   }
 
-  const eventId = await getCurrentEventId();
-  const candidates = (await findSponsorsByContactEmail(eventId, email)).filter(
+  // Login is not tied to a "current" event — search accounts across all events.
+  const candidates = (await findSponsorAccountsByEmail(email)).filter(
     (s) => s.passwordHash && isSponsorAccountStatus(s.status),
   );
 

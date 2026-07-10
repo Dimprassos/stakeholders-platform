@@ -81,6 +81,7 @@ export default async function ProposalPage({
           pwError: typeof sp.pwerr === "string" ? sp.pwerr : null,
           signed: sp.signed === "1",
           signError: sp.signerr === "1",
+          saved: sp.saved === "1",
         }}
       />
     );

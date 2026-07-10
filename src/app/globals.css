@@ -94,6 +94,7 @@
   --footer-bg:
     linear-gradient(180deg, rgba(15, 23, 42, 0.42), rgba(2, 6, 23, 0.84));
   --line: rgba(255, 255, 255, 0.12);
+  --surface-bg: rgba(148, 163, 184, 0.08);
   --brand: #fbbf24;
   --brand-ink: #1c1917;
   --brand-accent: #fbbf24;
@@ -177,6 +178,50 @@
 #admin-theme-root *,
 #admin-theme-root *::before,
 #admin-theme-root *::after {
+  transition-property: background-color, border-color, color, fill, stroke, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
+}
+
+/* Sponsor portal (docs/PLAN.md §16 Phase E) reuses the same layered surfaces as
+   the public site and admin CMS: brand gradient background, glassy chrome bar,
+   a distinct main surface, and light-mode surface cards. Mirrors the roots above
+   so the logged-in sponsor experience feels part of the same product, branded per
+   the sponsor's event. See src/app/invite/[token]/portal-shell.tsx. */
+#portal-theme-root {
+  background: var(--site-bg);
+  transition:
+    background 220ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+#portal-theme-root > header {
+  background: var(--chrome-bg);
+  border-color: var(--line);
+  box-shadow: var(--chrome-shadow);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+#portal-theme-root > footer {
+  background: var(--footer-bg);
+  border-color: var(--line);
+}
+
+.portal-main-surface {
+  background: var(--main-bg);
+}
+
+#portal-theme-root[data-theme="light"] .portal-main-surface [class*="rounded-2xl"][class*="border"],
+#portal-theme-root[data-theme="light"] .portal-main-surface [class*="rounded-xl"][class*="border"] {
+  background-color: var(--surface-bg);
+  box-shadow: var(--surface-shadow);
+}
+
+#portal-theme-root *,
+#portal-theme-root *::before,
+#portal-theme-root *::after {
   transition-property: background-color, border-color, color, fill, stroke, opacity;
   transition-duration: 180ms;
   transition-timing-function: ease;

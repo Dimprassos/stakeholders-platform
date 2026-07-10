@@ -1,6 +1,12 @@
 export const PUBLIC_THEME_ROOT_ID = "public-theme-root";
 export const SITE_THEME_STORAGE_KEY = "stakeholders-site-theme";
 
+// The sponsor portal is visitor-facing like the public site, so it reuses the
+// same theme options and shares SITE_THEME_STORAGE_KEY (one sponsor-facing
+// light/dark preference across the public site and the portal). It only needs
+// its own root id because it renders in a separate layout tree.
+export const PORTAL_THEME_ROOT_ID = "portal-theme-root";
+
 // The admin CMS gets its own independent theme preference (same 3 options),
 // stored separately so it never collides with a visitor's public-site choice.
 export const ADMIN_THEME_ROOT_ID = "admin-theme-root";

@@ -30,6 +30,7 @@ export default async function PortalPage({
         pwError: null,
         signed: sp.signed === "1",
         signError: sp.signerr === "1",
+        saved: sp.saved === "1",
       }}
     />
   );

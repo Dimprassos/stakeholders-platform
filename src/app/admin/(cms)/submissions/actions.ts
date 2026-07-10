@@ -17,8 +17,17 @@ export async function convertSubmissionAction(formData: FormData): Promise<void>
 
   const contactEmail = normalizeContactEmail(submission.email);
   if (contactEmail) {
-    const [duplicate] = await findSponsorsByContactEmail(submission.eventId, contactEmail);
-    if (duplicate) redirect(`/admin/candidates/${duplicate.id}?duplicate=1`);
+    const duplicate = (
+      await findSponsorsByContactEmail(submission.eventId, contactEmail)
+    ).find((s) => s.status !== "DECLINED");
+    if (duplicate) {
+      // The submission already maps to an existing candidate — mark it resolved so
+      // it doesn't stay NEW and re-trigger this same convert/redirect dead-end.
+      await prisma.submission.update({ where: { id }, data: { status: "CONVERTED" } });
+      revalidatePath("/admin/submissions");
+      revalidatePath("/admin");
+      redirect(`/admin/candidates/${duplicate.id}?duplicate=1`);
+    }
   }
 
   await prisma.$transaction([

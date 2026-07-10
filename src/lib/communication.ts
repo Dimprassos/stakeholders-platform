@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { getCurrentEvent } from "@/lib/event";
+import { findSponsorsByContactEmail } from "@/lib/sponsor-identity";
 
 const EMAIL_RE = /<?([^<>\s@]+@[^<>\s@]+\.[^<>\s@]+)>?/;
 
@@ -77,15 +78,20 @@ export async function ingestInboundEmail(input: InboundEmailInput) {
     return { ok: false as const, status: 404, error: "Event not found." };
   }
 
-  const sponsor = input.sponsorId
-    ? await prisma.sponsor.findFirst({
-        where: { id: input.sponsorId, eventId: event.id },
-        select: { id: true, companyName: true, contactEmail: true },
-      })
-    : await prisma.sponsor.findFirst({
-        where: { eventId: event.id, contactEmail: fromEmail },
-        select: { id: true, companyName: true, contactEmail: true },
-      });
+  let sponsor: { id: string; companyName: string; contactEmail: string | null } | null;
+  if (input.sponsorId) {
+    sponsor = await prisma.sponsor.findFirst({
+      where: { id: input.sponsorId, eventId: event.id },
+      select: { id: true, companyName: true, contactEmail: true },
+    });
+  } else {
+    // Match on normalized email (case-insensitive) so a reply from a differently
+    // cased address still attaches to the sponsor's thread.
+    const [match] = await findSponsorsByContactEmail(event.id, fromEmail);
+    sponsor = match
+      ? { id: match.id, companyName: match.companyName, contactEmail: match.contactEmail }
+      : null;
+  }
 
   const subject = input.subject?.trim() || `Inbound email from ${fromEmail}`;
   const receivedAt = input.receivedAt ? new Date(input.receivedAt) : new Date();

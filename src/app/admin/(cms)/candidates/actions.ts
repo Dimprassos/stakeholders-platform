@@ -58,7 +58,10 @@ export async function addCandidateAction(
   const eventId = await getAdminEventId();
   const contactEmail = normalizeContactEmail(parsed.data.contactEmail);
   if (contactEmail) {
-    const [duplicate] = await findSponsorsByContactEmail(eventId, contactEmail);
+    // A declined prospect shouldn't block re-adding the same email later.
+    const duplicate = (await findSponsorsByContactEmail(eventId, contactEmail)).find(
+      (s) => s.status !== "DECLINED",
+    );
     if (duplicate) {
       return {
         ok: false,

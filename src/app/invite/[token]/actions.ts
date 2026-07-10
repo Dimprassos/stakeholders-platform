@@ -189,7 +189,9 @@ export async function submitOnboardingAction(
       logoUrl,
       description: data.description || null,
       isHiddenFromPublic: data.isHiddenFromPublic === "on",
-      status: "DETAILS_SUBMITTED",
+      // Advance ACCEPTED → DETAILS_SUBMITTED on first submit, but never regress a
+      // sponsor who is already further along (e.g. CONFIRMED) when they edit.
+      status: sponsor.status === "ACCEPTED" ? "DETAILS_SUBMITTED" : sponsor.status,
       // Keep the magic link alive as the sponsor's ongoing portal (Phase E/F):
       // they return here to update materials and pay. Extend its expiry.
       tokenExpiresAt: portalExpiry(),
@@ -199,7 +201,12 @@ export async function submitOnboardingAction(
   revalidatePath("/admin/onboarding");
   revalidatePath("/admin/candidates");
   revalidatePath("/admin");
-  redirect(`/invite/${token}/success`);
+
+  // Return the sponsor to their portal (magic-link or account) with a success
+  // banner — never a dead-end "thank you" page that only links back to the site.
+  const back = safeReturn(str(formData, "returnTo"), token);
+  revalidatePath(back);
+  redirect(`${back}?saved=1`);
 }
 
 /**
