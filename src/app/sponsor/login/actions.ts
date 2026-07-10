@@ -2,12 +2,17 @@
 
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import { getCurrentEventId } from "@/lib/event";
 import {
   createSponsorSession,
   clearSponsorSession,
   ensurePortalToken,
 } from "@/lib/sponsor-auth";
+import {
+  findSponsorsByContactEmail,
+  isSponsorAccountStatus,
+  normalizeContactEmail,
+} from "@/lib/sponsor-identity";
 import type { SponsorLoginState } from "./types";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -21,7 +26,7 @@ export async function loginSponsorAction(
   _prev: SponsorLoginState,
   formData: FormData,
 ): Promise<SponsorLoginState> {
-  const email = str(formData, "email");
+  const email = normalizeContactEmail(str(formData, "email")) ?? "";
   const password = str(formData, "password");
 
   const errors: Record<string, string> = {};
@@ -31,20 +36,33 @@ export async function loginSponsorAction(
     return { ok: false, message: "Please fix the highlighted fields.", errors };
   }
 
-  // Sponsors are keyed by contact email; only those who set a password can log in.
-  const sponsor = await prisma.sponsor.findFirst({
-    where: { contactEmail: email, passwordHash: { not: null } },
-    orderBy: { updatedAt: "desc" },
-    select: { id: true, passwordHash: true, magicToken: true, tokenExpiresAt: true },
-  });
+  const eventId = await getCurrentEventId();
+  const candidates = (await findSponsorsByContactEmail(eventId, email)).filter(
+    (s) => s.passwordHash && isSponsorAccountStatus(s.status),
+  );
 
-  const valid = sponsor?.passwordHash
-    ? await bcrypt.compare(password, sponsor.passwordHash)
-    : false;
-  if (!sponsor || !valid) {
-    return { ok: false, message: "Invalid email or password." };
+  const validSponsors = [];
+  for (const candidate of candidates) {
+    if (
+      candidate.passwordHash &&
+      (await bcrypt.compare(password, candidate.passwordHash))
+    ) {
+      validSponsors.push(candidate);
+    }
   }
 
+  if (validSponsors.length === 0) {
+    return { ok: false, message: "Invalid email or password." };
+  }
+  if (validSponsors.length > 1) {
+    return {
+      ok: false,
+      message:
+        "This email is linked to more than one active sponsor account. Use the sponsor's personal link or ask the organizer to merge the duplicate records.",
+    };
+  }
+
+  const sponsor = validSponsors[0];
   await ensurePortalToken(sponsor);
   await createSponsorSession(sponsor.id);
   redirect("/portal");

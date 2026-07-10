@@ -121,6 +121,8 @@ export default async function SponsorDetailPage({
   const sp = await searchParams;
   const paySent = typeof sp.paySent === "string" ? sp.paySent : null;
   const payErr = sp.payerr === "amount";
+  const payPendingErr = sp.payerr === "pending";
+  const duplicateNotice = sp.duplicate === "1";
   const contractSent =
     typeof sp.contractSent === "string" ? sp.contractSent : null;
   const contractSaved = sp.consaved === "1";
@@ -241,6 +243,18 @@ export default async function SponsorDetailPage({
       {payErr && (
         <div className="rounded-xl border border-red-600/30 bg-red-600/5 p-3 text-sm text-red-700 dark:text-red-400">
           Enter a valid amount to request a payment.
+        </div>
+      )}
+      {payPendingErr && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-700 dark:text-amber-400">
+          This sponsor already has an open payment request. Mark it paid, cancel it,
+          or delete it before requesting another.
+        </div>
+      )}
+      {duplicateNotice && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-sm text-amber-700 dark:text-amber-400">
+          A submission with this email already maps to this candidate, so no duplicate
+          candidate was created.
         </div>
       )}
       {paySent === "1" && (
@@ -764,41 +778,47 @@ export default async function SponsorDetailPage({
           </ul>
         )}
 
-        <form
-          action={createPaymentAction}
-          className="mt-4 flex flex-wrap items-end gap-2"
-        >
-          <input type="hidden" name="sponsorId" value={sponsor.id} />
-          <input type="hidden" name="currency" value={paymentCurrency} />
-          <label className="flex flex-col gap-1 text-xs text-zinc-500">
-            Amount ({paymentCurrency})
-            <input
-              name="amount"
-              type="number"
-              min="0.01"
-              step="0.01"
-              required
-              defaultValue={defaultAmount}
-              className="w-32 rounded-lg border border-black/15 bg-transparent px-3 py-1.5 text-sm text-foreground dark:border-white/20"
-            />
-          </label>
-          <label className="flex flex-1 flex-col gap-1 text-xs text-zinc-500">
-            Description (optional)
-            <input
-              name="description"
-              type="text"
-              maxLength={200}
-              placeholder="e.g. Gold package — full sponsorship"
-              className="w-full rounded-lg border border-black/15 bg-transparent px-3 py-1.5 text-sm text-foreground dark:border-white/20"
-            />
-          </label>
-          <button
-            type="submit"
-            className="rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+        {pendingTotal > 0 ? (
+          <p className="mt-4 rounded-lg border border-dashed border-black/10 px-3 py-2 text-xs text-zinc-500 dark:border-white/10">
+            Resolve the open pending payment above before requesting another one.
+          </p>
+        ) : (
+          <form
+            action={createPaymentAction}
+            className="mt-4 flex flex-wrap items-end gap-2"
           >
-            Request payment
-          </button>
-        </form>
+            <input type="hidden" name="sponsorId" value={sponsor.id} />
+            <input type="hidden" name="currency" value={paymentCurrency} />
+            <label className="flex flex-col gap-1 text-xs text-zinc-500">
+              Amount ({paymentCurrency})
+              <input
+                name="amount"
+                type="number"
+                min="0.01"
+                step="0.01"
+                required
+                defaultValue={defaultAmount}
+                className="w-32 rounded-lg border border-black/15 bg-transparent px-3 py-1.5 text-sm text-foreground dark:border-white/20"
+              />
+            </label>
+            <label className="flex flex-1 flex-col gap-1 text-xs text-zinc-500">
+              Description (optional)
+              <input
+                name="description"
+                type="text"
+                maxLength={200}
+                placeholder="e.g. Gold package — full sponsorship"
+                className="w-full rounded-lg border border-black/15 bg-transparent px-3 py-1.5 text-sm text-foreground dark:border-white/20"
+              />
+            </label>
+            <button
+              type="submit"
+              className="rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
+            >
+              Request payment
+            </button>
+          </form>
+        )}
       </section>
 
       {/* Tasks */}

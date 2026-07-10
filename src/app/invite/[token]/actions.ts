@@ -9,6 +9,11 @@ import bcrypt from "bcryptjs";
 import { isTokenExpired, portalExpiry } from "@/lib/magic-token";
 import { getStripe } from "@/lib/stripe";
 import { createSponsorSession } from "@/lib/sponsor-auth";
+import {
+  findSponsorsByContactEmail,
+  isSponsorAccountStatus,
+  normalizeContactEmail,
+} from "@/lib/sponsor-identity";
 import { SITE_URL } from "@/lib/site";
 import { LIMITS, isValidVat, normalizeVat, normalizeUrl } from "@/lib/validation";
 import { ALLOWED_IMAGE_EXT, saveUploadedImage } from "@/lib/uploads";
@@ -268,10 +273,18 @@ export async function setSponsorPasswordAction(formData: FormData): Promise<void
   if (!sponsor || !sponsor.contactEmail) redirect(`/invite/${token}`);
   if (password.length < 8) redirect(`/invite/${token}?pwerr=short`);
 
+  const contactEmail = normalizeContactEmail(sponsor.contactEmail);
+  if (!contactEmail) redirect(`/invite/${token}`);
+
+  const duplicateAccount = (await findSponsorsByContactEmail(sponsor.eventId, contactEmail))
+    .filter((s) => s.id !== sponsor.id)
+    .find((s) => s.passwordHash && isSponsorAccountStatus(s.status));
+  if (duplicateAccount) redirect(`/invite/${token}?pwerr=duplicate`);
+
   const passwordHash = await bcrypt.hash(password, 10);
   await prisma.sponsor.update({
     where: { id: sponsor.id },
-    data: { passwordHash },
+    data: { contactEmail, passwordHash },
   });
   await createSponsorSession(sponsor.id);
   redirect("/portal");

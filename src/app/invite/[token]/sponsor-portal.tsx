@@ -39,7 +39,7 @@ export async function SponsorPortal({
     paid: boolean;
     cancel: boolean;
     error: string | null;
-    pwError: boolean;
+    pwError: string | null;
     signed: boolean;
     signError: boolean;
   };
@@ -62,6 +62,7 @@ export async function SponsorPortal({
   const paid = payments.filter((p) => p.status === "PAID");
   const latestReceiptUrl = paid.length > 0 ? paid[paid.length - 1].receiptUrl : null;
   const stripeReady = isStripeConfigured();
+  const multipleOpenPayments = due.length > 1;
 
   const deliverables = parseDeliverables(sponsor.deliverables);
   const materialsDone = DELIVERABLE_TYPES.filter((d) => deliverables[d.key]).length;
@@ -69,6 +70,7 @@ export async function SponsorPortal({
   const hasDetails = Boolean(
     sponsor.legalName || sponsor.vatNumber || sponsor.billingAddress,
   );
+  const needsDetails = !hasDetails;
   const isLive =
     sponsor.status === "CONFIRMED" &&
     sponsor.isPublished &&
@@ -116,6 +118,28 @@ export async function SponsorPortal({
         </Banner>
       )}
       {flags.signed && <Banner tone="green">Contract signed — thank you!</Banner>}
+
+      {/* Primary next step: onboarding details/materials */}
+      {needsDetails && (
+        <section className="mt-8 rounded-2xl border border-blue-500/40 bg-blue-500/5 p-6">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-400">
+            Next step
+          </h2>
+          <h3 className="mt-2 text-lg font-semibold">
+            Complete your sponsorship details
+          </h3>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Add billing details, website and materials so the organizer can prepare
+            your sponsor listing.
+          </p>
+          <Link
+            href={`/invite/${token}/form`}
+            className="mt-4 inline-flex rounded-full bg-foreground px-5 py-2 text-sm font-medium text-background transition-opacity hover:opacity-90"
+          >
+            Complete details & materials
+          </Link>
+        </section>
+      )}
 
       {/* Action needed: contract to sign */}
       {contract?.status === "SENT" && (
@@ -169,6 +193,12 @@ export async function SponsorPortal({
           <h2 className="text-sm font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-400">
             Payment due
           </h2>
+          {multipleOpenPayments && (
+            <p className="mt-2 rounded-lg border border-amber-500/30 bg-background/60 px-3 py-2 text-sm text-amber-800 dark:text-amber-300">
+              More than one payment request is open. Please wait for the organizer to
+              confirm the correct one before paying.
+            </p>
+          )}
           <ul className="mt-4 space-y-3">
             {due.map((p) => (
               <li key={p.id} className="flex flex-wrap items-center justify-between gap-3">
@@ -180,7 +210,7 @@ export async function SponsorPortal({
                     <p className="text-sm text-zinc-500">{p.description}</p>
                   )}
                 </div>
-                {stripeReady ? (
+                {stripeReady && !multipleOpenPayments ? (
                   <form action={startCheckoutAction}>
                     <input type="hidden" name="token" value={token} />
                     <input type="hidden" name="paymentId" value={p.id} />
@@ -191,13 +221,19 @@ export async function SponsorPortal({
                       Pay now
                     </button>
                   </form>
+                ) : multipleOpenPayments ? (
+                  <span className="text-sm text-zinc-500">Needs organizer review</span>
                 ) : (
-                  <span className="text-sm text-zinc-500">Awaiting payment link</span>
+                  <span className="text-sm text-zinc-500">
+                    Online payment not enabled yet
+                  </span>
                 )}
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-zinc-500">Processed securely by Stripe.</p>
+          {stripeReady && !multipleOpenPayments && (
+            <p className="mt-3 text-xs text-zinc-500">Processed securely by Stripe.</p>
+          )}
         </section>
       )}
 
@@ -254,7 +290,7 @@ export async function SponsorPortal({
             href={`/invite/${token}/form`}
             className="text-sm underline underline-offset-4 text-zinc-500 hover:text-foreground"
           >
-            {hasDetails ? "Edit →" : "Add →"}
+            {hasDetails ? "Edit →" : "Complete →"}
           </Link>
         </Row>
 
@@ -293,13 +329,19 @@ export async function SponsorPortal({
       {/* Account activation (magic-link visitors without a password yet) */}
       {mode === "token" && !sponsor.passwordHash && sponsor.contactEmail && (
         <section className="mt-8 rounded-2xl border border-black/10 p-6 dark:border-white/10">
-          <h2 className="text-sm font-semibold">Set a password to log in anytime</h2>
+          <h2 className="text-sm font-semibold">Optional: create a login</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            So you can return without this link — sign in with {sponsor.contactEmail}.
+            You can skip this and keep using this personal link. Creating a password
+            lets you return from Sponsor login later with {sponsor.contactEmail}.
+          </p>
+          <p className="mt-1 text-xs text-zinc-500">
+            You can also create this login later from this same link.
           </p>
           {flags.pwError && (
             <p className="mt-2 text-sm text-red-700 dark:text-red-400">
-              Password must be at least 8 characters.
+              {flags.pwError === "duplicate"
+                ? "This email already has an active sponsor account. Sign in from Sponsor login, or ask the organizer to merge the duplicate records."
+                : "Password must be at least 8 characters."}
             </p>
           )}
           <form action={setSponsorPasswordAction} className="mt-3 flex flex-wrap items-center gap-2">
@@ -317,7 +359,7 @@ export async function SponsorPortal({
               type="submit"
               className="rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90"
             >
-              Create account
+              Create login
             </button>
           </form>
         </section>

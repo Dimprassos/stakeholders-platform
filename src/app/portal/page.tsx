@@ -27,7 +27,7 @@ export default async function PortalPage({
         paid: typeof sp.paid === "string",
         cancel: sp.paycancel === "1",
         error: typeof sp.payerror === "string" ? sp.payerror : null,
-        pwError: false,
+        pwError: null,
         signed: sp.signed === "1",
         signError: sp.signerr === "1",
       }}

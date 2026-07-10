@@ -7,6 +7,10 @@ import { prisma } from "@/lib/prisma";
 import { isPackageFull, SLOT_HOLDING_STATUSES } from "@/lib/slots";
 import { getAdminEventId } from "@/lib/event";
 import { DELIVERABLE_TYPES } from "@/lib/deliverables";
+import {
+  findSponsorsByContactEmail,
+  normalizeContactEmail,
+} from "@/lib/sponsor-identity";
 import type { CandidateFormState } from "./types";
 import { PIPELINE_STATUSES } from "./types";
 
@@ -51,13 +55,26 @@ export async function addCandidateAction(
     };
   }
 
+  const eventId = await getAdminEventId();
+  const contactEmail = normalizeContactEmail(parsed.data.contactEmail);
+  if (contactEmail) {
+    const [duplicate] = await findSponsorsByContactEmail(eventId, contactEmail);
+    if (duplicate) {
+      return {
+        ok: false,
+        message: `${duplicate.companyName} already uses this email. Open that candidate instead of creating a duplicate.`,
+        errors: { contactEmail: "This email already exists in this event." },
+      };
+    }
+  }
+
   try {
     await prisma.sponsor.create({
       data: {
-        eventId: await getAdminEventId(),
+        eventId,
         companyName: parsed.data.companyName,
         contactName: parsed.data.contactName || null,
-        contactEmail: parsed.data.contactEmail || null,
+        contactEmail,
         packageId: parsed.data.packageId || null,
         status: "LEAD",
       },

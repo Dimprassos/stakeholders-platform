@@ -10,6 +10,7 @@ import {
 } from "./actions";
 import { PIPELINE_STATUSES } from "./types";
 import { getAdminEventId } from "@/lib/event";
+import { normalizeContactEmail } from "@/lib/sponsor-identity";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +62,11 @@ export default async function CandidatesPage({
   ]);
 
   const pkgOptions: PackageOption[] = packages;
+  const emailCounts = new Map<string, number>();
+  for (const sponsor of sponsors) {
+    const email = normalizeContactEmail(sponsor.contactEmail);
+    if (email) emailCounts.set(email, (emailCounts.get(email) ?? 0) + 1);
+  }
 
   return (
     <div className="space-y-8">
@@ -130,7 +136,17 @@ export default async function CandidatesPage({
                     {s.contactName ? (
                       <div>
                         <div>{s.contactName}</div>
-                        {s.contactEmail && <div className="text-xs">{s.contactEmail}</div>}
+                        {s.contactEmail && (
+                          <div className="text-xs">
+                            {s.contactEmail}
+                            {(emailCounts.get(normalizeContactEmail(s.contactEmail) ?? "") ??
+                              0) > 1 && (
+                              <span className="ml-2 rounded-full bg-red-600/10 px-2 py-0.5 text-[10px] font-medium text-red-700 dark:text-red-400">
+                                Duplicate email
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       "—"

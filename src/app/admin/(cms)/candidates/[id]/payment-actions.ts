@@ -49,6 +49,14 @@ export async function createPaymentAction(formData: FormData): Promise<void> {
     redirect(`/admin/candidates/${sponsorId}?payerr=amount`);
   }
 
+  const existingPending = await prisma.payment.findFirst({
+    where: { eventId, sponsorId, status: "PENDING" },
+    select: { id: true },
+  });
+  if (existingPending) {
+    redirect(`/admin/candidates/${sponsorId}?payerr=pending`);
+  }
+
   const amountCents = Math.round(amount * 100);
   await prisma.payment.create({
     data: {

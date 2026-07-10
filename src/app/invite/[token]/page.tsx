@@ -78,7 +78,7 @@ export default async function ProposalPage({
           paid: typeof sp.paid === "string",
           cancel: sp.paycancel === "1",
           error: typeof sp.payerror === "string" ? sp.payerror : null,
-          pwError: sp.pwerr === "short",
+          pwError: typeof sp.pwerr === "string" ? sp.pwerr : null,
           signed: sp.signed === "1",
           signError: sp.signerr === "1",
         }}
