@@ -1,4 +1,5 @@
 import { getCurrentEvent } from "@/lib/event";
+import { SITE_NAME } from "@/lib/site";
 
 const SOCIAL_LABELS = {
   websiteUrl: "Website",
@@ -9,8 +10,9 @@ const SOCIAL_LABELS = {
 } as const;
 
 export async function SiteFooter() {
+  // Brand is platform-level (the main site spans every event); the social links
+  // and venue map still come from the featured event the homepage showcases.
   const event = await getCurrentEvent();
-  const name = event?.name ?? "Stakeholders Summit 2026";
   const socialLinks: { label: string; href: string }[] = [];
   if (event) {
     for (const key of Object.keys(SOCIAL_LABELS) as (keyof typeof SOCIAL_LABELS)[]) {
@@ -23,7 +25,7 @@ export async function SiteFooter() {
     <footer className="border-t border-black/10 dark:border-white/10">
       <div className="mx-auto max-w-5xl space-y-3 px-6 py-8 text-sm text-zinc-500 dark:text-zinc-400">
         <p>
-          © {new Date().getFullYear()} {name} · Interested in partnering?{" "}
+          © {new Date().getFullYear()} {SITE_NAME} · Interested in partnering?{" "}
           <a href="/become-a-sponsor" className="underline underline-offset-4 hover:text-foreground">
             Become a sponsor
           </a>{" "}

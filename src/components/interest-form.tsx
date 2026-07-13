@@ -1,11 +1,12 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { submitInterest } from "@/lib/interest/actions";
 import { INITIAL_SUBMIT_STATE } from "@/lib/interest/types";
 import { LIMITS } from "@/lib/validation";
 
-type PackageOption = { id: string; name: string; tier: string };
+type PackageOption = { id: string; name: string; tier: string; eventSlug?: string };
+type EventOption = { slug: string; name: string };
 
 const inputClass =
   "w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground dark:border-white/20";
@@ -15,11 +16,29 @@ const errorClass = "mt-1 text-xs text-red-600 dark:text-red-400";
 export function InterestForm({
   packages,
   defaultPackageId,
+  eventSlug,
+  events,
 }: {
   packages: PackageOption[];
   defaultPackageId?: string;
+  /** Fixed event (per-event pages) — submitted as a hidden field, no picker. */
+  eventSlug?: string;
+  /** All selectable events (main site). With more than one, the visitor picks. */
+  events?: EventOption[];
 }) {
   const [state, formAction, pending] = useActionState(submitInterest, INITIAL_SUBMIT_STATE);
+
+  // On a multi-event site the generic form must not silently target the default
+  // event: the visitor picks the event, and the package list narrows to it.
+  // With a single event (or a fixed one) nothing extra is shown.
+  const showEventPicker = !eventSlug && (events?.length ?? 0) > 1;
+  const [selectedEvent, setSelectedEvent] = useState(
+    packages.find((p) => p.id === defaultPackageId)?.eventSlug ?? events?.[0]?.slug ?? "",
+  );
+  const [selectedPackage, setSelectedPackage] = useState(defaultPackageId ?? "");
+  const visiblePackages = showEventPicker
+    ? packages.filter((p) => p.eventSlug === selectedEvent)
+    : packages;
 
   if (state.ok) {
     return (
@@ -36,6 +55,7 @@ export function InterestForm({
 
   return (
     <form action={formAction} className="space-y-5" noValidate>
+      {eventSlug && <input type="hidden" name="eventSlug" value={eventSlug} />}
       {/* Honeypot: hidden from users, catches bots. */}
       <input
         type="text"
@@ -114,6 +134,30 @@ export function InterestForm({
         </div>
       </div>
 
+      {showEventPicker && (
+        <div>
+          <label className={labelClass} htmlFor="eventSlug">
+            Which event? *
+          </label>
+          <select
+            id="eventSlug"
+            name="eventSlug"
+            value={selectedEvent}
+            onChange={(e) => {
+              setSelectedEvent(e.target.value);
+              setSelectedPackage("");
+            }}
+            className={inputClass}
+          >
+            {events?.map((ev) => (
+              <option key={ev.slug} value={ev.slug}>
+                {ev.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div>
         <label className={labelClass} htmlFor="packageInterestId">
           Package of interest
@@ -121,11 +165,12 @@ export function InterestForm({
         <select
           id="packageInterestId"
           name="packageInterestId"
-          defaultValue={defaultPackageId ?? ""}
+          value={selectedPackage}
+          onChange={(e) => setSelectedPackage(e.target.value)}
           className={inputClass}
         >
           <option value="">No preference</option>
-          {packages.map((p) => (
+          {visiblePackages.map((p) => (
             <option key={p.id} value={p.id}>
               {p.name}
             </option>

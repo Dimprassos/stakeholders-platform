@@ -54,6 +54,7 @@ model Event {
   termsText         String?
   privacyText       String?
   cancellationText  String?
+  agendaNote        String? // e.g. "Draft programme — subject to change"
 
   // --- Phase B: branding ---
   themeMode         String  @default("AUTO") // AUTO | LIGHT | DARK | CUSTOM
@@ -74,6 +75,7 @@ model Event {
   tasks       Task[]
   payments    Payment[]
   contracts   Contract[]
+  agenda      AgendaItem[]
 }
 
 /// A sponsorship package / tier shown on the public packages page.
@@ -191,6 +193,27 @@ model Outreach {
 
   @@index([eventId])
   @@index([sponsorId])
+}
+
+/// One entry in an event's public programme, grouped by `day` on the agenda page.
+model AgendaItem {
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  day          String // ISO date (e.g. 2026-10-21) — groups items into days
+  dayLabel     String? // optional heading, e.g. "Pre-Conference"
+  startTime    String // "14:00"
+  endTime      String? // "17:00"
+  title        String
+  type         String   @default("SESSION") // SESSION | KEYNOTE | BREAK | SOCIAL | REGISTRATION
+  location     String?
+  speaker      String?
+  description  String?
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([eventId])
 }
 
 /// Reusable email template with merge fields (rendered at send time).

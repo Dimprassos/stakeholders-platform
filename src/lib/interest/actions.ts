@@ -48,7 +48,19 @@ export async function submitInterest(
     return { ok: false, message: "Please fix the highlighted fields.", errors };
   }
 
-  const eventId = await getCurrentEventId();
+  // Record the submission under the event the visitor was browsing (via the
+  // hidden eventSlug from `?event=`), falling back to the default event.
+  const eventSlug = str(formData, "eventSlug");
+  let eventId: string;
+  if (eventSlug) {
+    const ev = await prisma.event.findFirst({
+      where: { slug: eventSlug, isActive: true },
+      select: { id: true },
+    });
+    eventId = ev?.id ?? (await getCurrentEventId());
+  } else {
+    eventId = await getCurrentEventId();
+  }
 
   // Only keep the package reference if it points to a real package in this event.
   if (packageInterestId) {

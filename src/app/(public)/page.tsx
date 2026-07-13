@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getCurrentEvent } from "@/lib/event";
+import { getCurrentEvent, listEvents } from "@/lib/event";
 import { formatDateRange } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -11,12 +11,6 @@ export const metadata: Metadata = {
     "Explore sponsorship packages, see who's already on board, and tell us you're interested — we'll take it from there.",
   alternates: { canonical: "/" },
 };
-
-const HIGHLIGHTS = [
-  { value: "4", label: "Partner tiers" },
-  { value: "3", label: "Summit days" },
-  { value: "Invite", label: "Curated sponsor flow" },
-];
 
 const CARDS = [
   {
@@ -40,11 +34,16 @@ const CARDS = [
 ];
 
 export default async function Home() {
-  const event = await getCurrentEvent();
+  const [event, allEvents] = await Promise.all([getCurrentEvent(), listEvents()]);
   const name = event?.name ?? "Stakeholders Summit 2026";
   const tagline = event?.tagline ?? "Where industry leaders and brands connect.";
   const dateRange = formatDateRange(event?.startDate, event?.endDate);
   const meta = [dateRange, event?.venue].filter(Boolean).join(" · ");
+
+  // When the organizer runs more than one event, surface all of them on the
+  // landing page (single-event stays exactly as before).
+  const events = allEvents.filter((e) => e.isActive);
+  const showEvents = events.length > 1;
 
   return (
     <>
@@ -88,21 +87,60 @@ export default async function Home() {
             </div>
           </div>
 
-          <dl className="mt-12 grid gap-3 sm:grid-cols-3">
-            {HIGHLIGHTS.map((item) => (
-              <div
-                key={item.label}
-                className="rounded-lg border border-black/10 px-4 py-3 dark:border-white/10"
-              >
-                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  {item.label}
-                </dt>
-                <dd className="mt-1 text-2xl font-semibold tracking-tight">{item.value}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </section>
+
+      {showEvents && (
+        <section id="events" className="mx-auto max-w-5xl px-6 pt-16">
+          <h2 className="text-2xl font-semibold tracking-tight">Our events</h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Sponsorship opportunities across every event we run.
+          </p>
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+            {events.map((e) => {
+              const evMeta = [formatDateRange(e.startDate, e.endDate), e.venue]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <li key={e.id}>
+                  <Link
+                    href={`/events/${e.slug}`}
+                    className="flex h-full items-start gap-4 rounded-lg border border-black/10 p-6 transition-colors hover:border-brand-accent dark:border-white/10"
+                  >
+                    {e.logoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={e.logoUrl}
+                        alt=""
+                        className="h-10 w-10 shrink-0 rounded object-contain"
+                      />
+                    ) : null}
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold">{e.name}</h3>
+                        {e.isDefault && (
+                          <span className="rounded-full bg-brand-accent/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-brand-accent">
+                            Featured
+                          </span>
+                        )}
+                      </div>
+                      {evMeta && <p className="mt-1 text-xs text-zinc-500">{evMeta}</p>}
+                      {e.tagline && (
+                        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+                          {e.tagline}
+                        </p>
+                      )}
+                      <p className="mt-3 text-sm font-medium text-brand-accent">
+                        View event →
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
         <div className="grid gap-4 pt-16 sm:grid-cols-3">

@@ -27,6 +27,19 @@ export const getCurrentEvent = cache(async () => {
   );
 });
 
+/**
+ * Resolve a public-facing event by slug (must be active), falling back to the
+ * default event. Lets public pages scope to any event via `?event=slug` while
+ * keeping the default event as the plain no-param behavior.
+ */
+export const getPublicEvent = cache(async (slug?: string | null) => {
+  if (slug) {
+    const event = await prisma.event.findFirst({ where: { slug, isActive: true } });
+    if (event) return event;
+  }
+  return getCurrentEvent();
+});
+
 /** The current event's id. Throws if the DB has no event (run the seed). */
 export const getCurrentEventId = cache(async (): Promise<string> => {
   const event = await getCurrentEvent();
