@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { isTokenExpired, portalExpiry } from "@/lib/magic-token";
+import { declineSponsor } from "@/lib/sponsor-decline";
 import { getStripe } from "@/lib/stripe";
 import { createSponsorSession } from "@/lib/sponsor-auth";
 import {
@@ -94,11 +95,11 @@ export async function declineAction(formData: FormData): Promise<void> {
   const token = str(formData, "token");
   const sponsor = await getSponsorByToken(token);
   if (!sponsor) return;
-  await prisma.sponsor.update({
-    where: { id: sponsor.id },
-    data: { status: "DECLINED", magicToken: null, tokenExpiresAt: null, tokenIssuedAt: null },
-  });
+  await declineSponsor(sponsor.id);
   revalidatePath(`/invite/${token}`);
+  revalidatePath("/admin/candidates");
+  revalidatePath("/admin/notifications");
+  revalidatePath("/admin");
 }
 
 export async function submitOnboardingAction(

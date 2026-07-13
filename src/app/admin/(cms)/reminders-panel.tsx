@@ -13,16 +13,21 @@ const TONE_DOT: Record<ReminderTone, string> = {
   blue: "bg-blue-500",
 };
 
+/** The dashboard shows the most urgent few; /admin/notifications lists them all. */
+const PANEL_LIMIT = 8;
+
 export async function RemindersPanel({ eventId }: { eventId: string }) {
-  const reminders = await getReminders(eventId);
+  const all = await getReminders(eventId);
+  const reminders = all.slice(0, PANEL_LIMIT);
+  const overflow = all.length - reminders.length;
 
   return (
     <section id="reminders">
       <div className="mb-3 flex items-center justify-between">
         <h2 className="text-lg font-semibold">Reminders</h2>
-        {reminders.length > 0 && (
+        {all.length > 0 && (
           <span className="text-xs text-zinc-500">
-            {reminders.length} item{reminders.length === 1 ? "" : "s"} need attention
+            {all.length} item{all.length === 1 ? "" : "s"} need attention
           </span>
         )}
       </div>
@@ -57,6 +62,16 @@ export async function RemindersPanel({ eventId }: { eventId: string }) {
               </Link>
             </li>
           ))}
+          {overflow > 0 && (
+            <li>
+              <Link
+                href="/admin/notifications"
+                className="block rounded-lg border border-dashed border-black/10 px-4 py-3 text-sm text-zinc-500 transition-colors hover:text-foreground dark:border-white/10"
+              >
+                {overflow} more →
+              </Link>
+            </li>
+          )}
         </ul>
       )}
     </section>

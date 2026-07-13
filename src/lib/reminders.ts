@@ -69,6 +69,8 @@ export const getReminders = cache(async (eventId: string): Promise<Reminder[]> =
       where: { eventId, status: "INVITE_SENT", tokenExpiresAt: { not: null } },
       select: { id: true, companyName: true, tokenExpiresAt: true },
     }),
+    // No `take` on these three: the count they produce is what the topbar badge
+    // shows, so capping the query would under-report how much needs attention.
     prisma.outreach.findMany({
       where: { eventId, direction: "INBOUND", readAt: null },
       select: {
@@ -79,10 +81,12 @@ export const getReminders = cache(async (eventId: string): Promise<Reminder[]> =
         sponsor: { select: { companyName: true } },
       },
       orderBy: { receivedAt: "desc" },
-      take: 10,
     }),
+    // Declined sponsors are excluded here and below: declining voids their open
+    // payment and pulls their contract back to draft (see @/lib/sponsor-decline),
+    // so this is belt-and-braces against a record that predates that rule.
     prisma.payment.findMany({
-      where: { eventId, status: "PENDING" },
+      where: { eventId, status: "PENDING", sponsor: { status: { not: "DECLINED" } } },
       select: {
         id: true,
         sponsorId: true,
@@ -91,10 +95,9 @@ export const getReminders = cache(async (eventId: string): Promise<Reminder[]> =
         sponsor: { select: { companyName: true } },
       },
       orderBy: { createdAt: "asc" },
-      take: 10,
     }),
     prisma.contract.findMany({
-      where: { eventId, status: "SENT" },
+      where: { eventId, status: "SENT", sponsor: { status: { not: "DECLINED" } } },
       select: {
         id: true,
         sponsorId: true,
@@ -102,7 +105,6 @@ export const getReminders = cache(async (eventId: string): Promise<Reminder[]> =
         sponsor: { select: { companyName: true } },
       },
       orderBy: { updatedAt: "asc" },
-      take: 10,
     }),
     prisma.event.findUnique({ where: { id: eventId }, select: { deadlines: true } }),
   ]);
@@ -134,7 +136,19 @@ export const getReminders = cache(async (eventId: string): Promise<Reminder[]> =
 
   const deadlines = event ? parseDeadlines(event.deadlines) : [];
   for (const d of deadlines) {
-    if (d.date >= today && d.date <= in14) {
+    // A deadline that has passed keeps nagging in red, exactly like an overdue
+    // task — previously it just fell out of the window and vanished silently,
+    // so a missed deadline produced no notification at all. It clears when the
+    // organizer updates or removes the deadline on the event.
+    if (d.date < today) {
+      reminders.push({
+        id: `deadline-${d.label}-${d.date}`,
+        title: `Deadline passed: ${d.label}`,
+        href: "/admin/events",
+        when: fmtDay(d.date),
+        tone: "red",
+      });
+    } else if (d.date <= in14) {
       reminders.push({
         id: `deadline-${d.label}-${d.date}`,
         title: `Deadline: ${d.label}`,

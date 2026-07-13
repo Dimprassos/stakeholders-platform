@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { isPackageFull, SLOT_HOLDING_STATUSES } from "@/lib/slots";
 import { getAdminEventId } from "@/lib/event";
 import { can, blockedUrl } from "@/lib/sponsor-lifecycle";
+import { declineSponsor } from "@/lib/sponsor-decline";
 import { DELIVERABLE_TYPES } from "@/lib/deliverables";
 import {
   findSponsorsByContactEmail,
@@ -124,28 +125,20 @@ export async function setStatusAction(formData: FormData): Promise<void> {
     slotFullRedirect(sponsor.package?.name ?? "package");
   }
 
-  await prisma.sponsor.update({
-    where: { id },
-    data:
-      status === "CONFIRMED"
-        ? { status }
-        : status === "DECLINED"
-          ? {
-              // Declining must REVOKE portal access, exactly like the sponsor-side
-              // declineAction. Without this the candidate keeps a working magic
-              // link and can still accept, submit details and even pay after the
-              // organizer has rejected them.
-              status,
-              isPublished: false,
-              magicToken: null,
-              tokenIssuedAt: null,
-              tokenExpiresAt: null,
-            }
-          : // Leaving CONFIRMED must not leave a stale public listing behind.
-            { status, isPublished: false },
-  });
+  if (status === "DECLINED") {
+    // Revokes portal access and closes out their open payment/contract — shared
+    // with the sponsor-side declineAction so both paths behave identically.
+    await declineSponsor(id);
+  } else {
+    await prisma.sponsor.update({
+      where: { id },
+      // Leaving CONFIRMED must not leave a stale public listing behind.
+      data: status === "CONFIRMED" ? { status } : { status, isPublished: false },
+    });
+  }
   revalidatePath("/admin/candidates");
   revalidatePath("/admin");
+  revalidatePath("/admin/notifications");
   revalidatePath("/sponsors");
 }
 
