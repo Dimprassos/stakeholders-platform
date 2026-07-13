@@ -296,7 +296,7 @@ function PendingCard({
   return (
     <Link
       href={href}
-      className="rounded-xl border border-black/10 p-4 transition-colors hover:border-foreground dark:border-white/10"
+      className="lift rounded-xl border border-black/10 p-4 dark:border-white/10"
     >
       <p className={`text-3xl font-semibold tracking-tight ${tone ?? ""}`}>{value}</p>
       <p className="mt-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">{label}</p>

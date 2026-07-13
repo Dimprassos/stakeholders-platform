@@ -2,13 +2,19 @@
 
 import { useActionState } from "react";
 import Link from "next/link";
+import { ADMIN_THEME_ROOT_ID } from "@/lib/site-themes";
 import { loginAction } from "./actions";
 import { INITIAL_LOGIN_STATE } from "./types";
 
+// This page is pinned to `data-theme="light"`: there's no AdminThemeSwitcher
+// here to restore a saved preference, so it renders the light palette for
+// everyone. Hence no `dark:` variants below — that variant keys off
+// `[data-theme="dark"]` (see globals.css), so it could never fire here anyway.
+
 const inputClass =
-  "w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground dark:border-white/20";
+  "w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm outline-none focus:border-foreground";
 const labelClass = "block text-sm font-medium";
-const errorClass = "mt-1 text-xs text-red-600 dark:text-red-400";
+const errorClass = "mt-1 text-xs text-red-600";
 
 export default function LoginPage() {
   const [state, formAction, pending] = useActionState(loginAction, INITIAL_LOGIN_STATE);
@@ -16,18 +22,28 @@ export default function LoginPage() {
   const errors = state.errors ?? {};
 
   return (
+    // The id makes #admin-theme-root paint the theme's beige gradient behind the
+    // card (globals.css), replacing the hardcoded zinc this page used to carry.
     <main
+      id={ADMIN_THEME_ROOT_ID}
       data-theme="light"
-      className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 text-foreground dark:bg-zinc-950"
+      className="flex min-h-screen items-center justify-center px-6 text-foreground"
     >
-      <div className="w-full max-w-sm">
+      <div
+        className="w-full max-w-sm rounded-2xl border p-8"
+        style={{
+          borderColor: "var(--line)",
+          backgroundColor: "var(--surface-bg)",
+          boxShadow: "var(--surface-shadow)",
+        }}
+      >
         <h1 className="text-2xl font-semibold tracking-tight">Admin sign in</h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-zinc-600">
           Manage sponsorship packages, candidates and the public showcase.
         </p>
 
         {state.message && !state.ok && (
-          <p className="mt-6 rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+          <p className="mt-6 rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700">
             {state.message}
           </p>
         )}

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { customBrandVars } from "@/lib/event-content";
 import { PUBLIC_THEME_ROOT_ID } from "@/lib/site-themes";
 import { SiteThemeSwitcher } from "@/components/site-theme-switcher";
+import { ScrollEffects } from "@/components/scroll-effects";
 import { NavLink } from "@/components/nav-link";
 
 export const dynamic = "force-dynamic";
@@ -22,7 +23,7 @@ const SOCIAL_LABELS = {
 } as const;
 
 const navClass =
-  "text-zinc-600 transition-colors hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-brand-accent dark:text-zinc-400";
+  "nav-link text-zinc-600 transition-colors hover:text-foreground aria-[current=page]:font-medium aria-[current=page]:text-brand-accent dark:text-zinc-400";
 
 export default async function EventLayout({
   children,
@@ -64,9 +65,14 @@ export default async function EventLayout({
         Skip to content
       </a>
 
+      <ScrollEffects />
+
       <header className="border-b border-black/10 dark:border-white/10">
-        <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:px-6">
-          <Link href={base} className="flex items-center gap-2 font-semibold tracking-tight">
+        <div className="header-bar mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-y-3 px-4 py-4 sm:px-6">
+          <Link
+            href={base}
+            className="flex items-center gap-2 font-semibold tracking-tight transition-transform hover:-translate-y-px"
+          >
             {event.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -100,7 +106,7 @@ export default async function EventLayout({
             </NavLink>
             <NavLink
               href={`${base}/become-a-sponsor`}
-              className="rounded-full bg-brand px-4 py-2 text-xs font-medium text-brand-ink transition-opacity hover:opacity-90"
+              className="btn-brand rounded-full bg-brand px-4 py-2 text-xs font-medium text-brand-ink"
             >
               Become a sponsor
             </NavLink>

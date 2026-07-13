@@ -6,6 +6,7 @@ import { EventSwitcher } from "./events/event-switcher";
 import { AdminNav } from "./admin-nav";
 import { AdminThemeSwitcher } from "@/components/admin-theme-switcher";
 import { ADMIN_THEME_ROOT_ID } from "@/lib/site-themes";
+import { SITE_LOGO_URL, SITE_NAME } from "@/lib/site";
 import { getReminders } from "@/lib/reminders";
 import { logoutAction } from "@/app/admin/login/actions";
 
@@ -38,8 +39,21 @@ export default async function AdminLayout({
         <div className="mx-auto max-w-6xl px-6">
           {/* Top strip — brand + controls */}
           <div className="flex items-center justify-between gap-4 py-3">
-            <Link href="/admin" className="flex items-baseline gap-2">
-              <span className="text-base font-semibold tracking-tight">Stakeholders</span>
+            {/* Same platform wordmark as the public header (logo if configured,
+                otherwise the name) — was a hardcoded "Stakeholders" that ignored
+                SITE_NAME, so it would have drifted the moment the env var was set.
+                items-center rather than items-baseline: a logo has no baseline. */}
+            <Link href="/admin" className="flex items-center gap-2">
+              {SITE_LOGO_URL ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={SITE_LOGO_URL}
+                  alt={SITE_NAME}
+                  className="h-7 w-auto object-contain"
+                />
+              ) : (
+                <span className="text-base font-semibold tracking-tight">{SITE_NAME}</span>
+              )}
               <span className="rounded-full bg-brand/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-brand-accent">
                 CMS
               </span>
@@ -91,7 +105,9 @@ export default async function AdminLayout({
 
       <footer className="border-t border-black/10 dark:border-white/10">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-2 px-6 py-6 text-xs text-zinc-500 dark:text-zinc-400">
-          <span>Stakeholders CMS{currentEvent ? ` · ${currentEvent.name}` : ""}</span>
+          <span>
+            {SITE_NAME} CMS{currentEvent ? ` · ${currentEvent.name}` : ""}
+          </span>
           <Link href="/" className="underline underline-offset-4 hover:text-foreground">
             View public site →
           </Link>

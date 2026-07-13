@@ -1,61 +1,26 @@
 @import "tailwindcss";
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-  --site-bg:
-    radial-gradient(circle at 12% 0%, rgba(245, 158, 11, 0.12), transparent 28rem),
-    linear-gradient(180deg, #fffdf7 0%, #f8fafc 48%, #f3f4f6 100%);
-  --chrome-bg: rgba(255, 255, 255, 0.78);
-  --main-bg:
-    radial-gradient(circle at 92% 0%, rgba(37, 99, 235, 0.06), transparent 24rem),
-    linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(248, 250, 252, 0.86));
-  --footer-bg: rgba(15, 23, 42, 0.035);
-  --line: rgba(15, 23, 42, 0.1);
-  --surface-bg: rgba(255, 255, 255, 0.64);
-  --surface-shadow: none;
-  --chrome-shadow: none;
-  --brand: #f59e0b; /* warm amber-gold — solid fills (buttons, highlights) */
-  --brand-ink: #1c1917; /* readable text on the gold fill */
-  --brand-accent: #b45309; /* gold accent for text/links on light backgrounds */
-}
+/* ---------------------------------------------------------------------------
+   Theme palettes.
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-brand: var(--brand);
-  --color-brand-ink: var(--brand-ink);
-  --color-brand-accent: var(--brand-accent);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+   There are exactly two: light (Athens beige + blue) and dark (deep navy +
+   gold). Each is declared in two places, and the pairs MUST stay identical:
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --site-bg:
-      radial-gradient(circle at 18% 0%, rgba(251, 191, 36, 0.16), transparent 30rem),
-      linear-gradient(180deg, #080b12 0%, #0a0a0a 55%, #050507 100%);
-    --chrome-bg: rgba(8, 11, 18, 0.76);
-    --main-bg:
-      radial-gradient(circle at 88% 0%, rgba(37, 99, 235, 0.1), transparent 24rem),
-      linear-gradient(180deg, rgba(15, 23, 42, 0.62), rgba(5, 6, 10, 0.9));
-    --footer-bg: rgba(255, 255, 255, 0.035);
-    --line: rgba(255, 255, 255, 0.11);
-    --surface-bg: rgba(15, 23, 42, 0.46);
-    --surface-shadow: none;
-    --chrome-shadow: none;
-    --brand-accent: #fbbf24; /* lighter gold reads better on dark backgrounds */
-  }
-}
+     light  ->  `:root, [data-theme="light"]`      (below)
+     dark   ->  `@media (prefers-color-scheme: dark) :root`  +  `[data-theme="dark"]`
 
-/* Per-event theme override (Phase B branding): a `data-theme` attribute forces
-   light/dark regardless of OS preference. Attribute selectors out-specificity
-   the plain `:root` rules above (including inside the media query), and work
-   on any element (not just <html>) so the public layout can scope it without
-   affecting the admin CMS. See src/app/(public)/layout.tsx. */
+   Why both: `:root` is what paints before hydration (and with JS off), while
+   the theme switchers stamp `data-theme` on their root div once mounted — and
+   they do it for "System" too, not just an explicit Light/Dark pick. So every
+   visitor ends up on a `[data-theme]` palette; `:root` is only ever the first
+   frame. When the two disagreed, a light-OS visitor got a white/gold flash
+   before the beige/blue theme landed. Keeping them equal removes that.
+
+   Each block declares EVERY var — none may rely on inheriting from `:root`,
+   because `:root` is no longer a neutral base but a full light palette.
+   --------------------------------------------------------------------------- */
+:root,
 [data-theme="light"] {
   --background: #f5eadb;
   --foreground: #111827;
@@ -75,11 +40,73 @@
     0 18px 45px rgba(92, 64, 36, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
   --chrome-shadow: 0 1px 0 rgba(104, 75, 44, 0.18);
-  --brand: #93c5fd;
-  --brand-ink: #0f172a;
-  --brand-accent: #2563eb;
+  /* Athens beige + blue. The fill is a real blue carrying WHITE text — the old
+     pale #93c5fd was too washed out to work as a primary CTA, and every motion
+     effect (button sheen, card glow, gradient headline) is derived from these,
+     so a weak brand made the whole light theme look faded next to dark. */
+  --brand: #2563eb;
+  --brand-ink: #ffffff; /* white on the blue fill — 5.2:1, passes AA */
+  --brand-accent: #1d4ed8; /* deeper blue for links/eyebrows — 5.6:1 on the beige */
+  /* The two hues the hero's drifting light is painted with. They mirror the two
+     radial gradients in --site-bg, so the animated blobs read as that same
+     backdrop coming to life rather than a second, unrelated palette. Kept apart
+     from --brand/--brand-accent because those must stay legible as text/fills,
+     while these only ever appear behind a heavy blur. */
+  --glow-1: #2563eb; /* blue, top-left — mirrors --site-bg's blue radial */
+  --glow-2: #eab308; /* gold, top-right — mirrors --site-bg's yellow radial */
+  /* A translucent brand wash for hover backgrounds (table rows, ghost buttons).
+     Deliberately a literal rgba rather than color-mix(): Lightning CSS compiles
+     color-mix() with an @supports guard whose fallback is the *undiluted* color,
+     so a browser without color-mix() would paint a solid blue row on hover. */
+  --tint: rgba(37, 99, 235, 0.07);
   color-scheme: light;
 }
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-accent: var(--brand-accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Dark, for a dark-OS visitor before the switcher has stamped `data-theme`.
+   Must mirror [data-theme="dark"] below, value for value. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #080b12;
+    --foreground: #f8fafc;
+    --site-bg:
+      radial-gradient(circle at 20% -10%, rgba(251, 191, 36, 0.18), transparent 28rem),
+      radial-gradient(circle at 88% 0%, rgba(37, 99, 235, 0.12), transparent 24rem),
+      linear-gradient(180deg, #080b12 0%, #0b1020 55%, #05060a 100%);
+    --chrome-bg: rgba(8, 11, 18, 0.72);
+    --main-bg:
+      radial-gradient(circle at 86% 0%, rgba(37, 99, 235, 0.12), transparent 26rem),
+      linear-gradient(180deg, rgba(15, 23, 42, 0.64), rgba(5, 6, 10, 0.92));
+    --footer-bg:
+      linear-gradient(180deg, rgba(15, 23, 42, 0.42), rgba(2, 6, 23, 0.84));
+    --line: rgba(255, 255, 255, 0.12);
+    --surface-bg: rgba(148, 163, 184, 0.08);
+    --surface-shadow: none;
+    --chrome-shadow: none;
+    --brand: #fbbf24;
+    --brand-ink: #1c1917;
+    --brand-accent: #fbbf24;
+    --glow-1: #fbbf24;
+    --glow-2: #2563eb;
+    --tint: rgba(251, 191, 36, 0.1);
+    color-scheme: dark;
+  }
+}
+
+/* Per-event theme override (Phase B branding): a `data-theme` attribute forces
+   light/dark regardless of OS preference. Attribute selectors out-specificity
+   the plain `:root` rules above (including inside the media query), and work
+   on any element (not just <html>) so the public layout can scope it without
+   affecting the admin CMS. See src/app/(public)/layout.tsx. */
 [data-theme="dark"] {
   --background: #080b12;
   --foreground: #f8fafc;
@@ -95,9 +122,16 @@
     linear-gradient(180deg, rgba(15, 23, 42, 0.42), rgba(2, 6, 23, 0.84));
   --line: rgba(255, 255, 255, 0.12);
   --surface-bg: rgba(148, 163, 184, 0.08);
+  /* Explicit, not inherited: `:root` now carries the light theme's warm card
+     and chrome shadows, which would otherwise bleed into dark. */
+  --surface-shadow: none;
+  --chrome-shadow: none;
   --brand: #fbbf24;
   --brand-ink: #1c1917;
   --brand-accent: #fbbf24;
+  --glow-1: #fbbf24; /* gold, top-left */
+  --glow-2: #2563eb; /* blue, top-right */
+  --tint: rgba(251, 191, 36, 0.1);
   color-scheme: dark;
 }
 
@@ -131,9 +165,27 @@
   box-shadow: var(--surface-shadow);
 }
 
-#public-theme-root *,
-#public-theme-root *::before,
-#public-theme-root *::after {
+/* The same card surface, for the frame *before* the switcher stamps data-theme.
+   On a light-OS visitor the vars are already the light palette (see :root), so
+   the cards must be filled from the first paint or they visibly pop in on
+   hydration. Scoped three ways so it can never leak into dark:
+     - the media query — a dark-OS visitor never matches;
+     - :not([data-theme]) — it stops matching the instant the switcher runs,
+       handing over to the rule above with identical values;
+     - identical specificity to that rule (:not() counts its argument, so both
+       weigh 1-4-0), meaning the two can never fight over a card.
+   #admin-theme-root needs no twin: it always renders data-theme="light". */
+@media (prefers-color-scheme: light) {
+  #public-theme-root:not([data-theme]) .public-main-surface [class*="rounded-lg"][class*="border"] {
+    background-color: var(--surface-bg);
+    box-shadow: var(--surface-shadow);
+  }
+}
+
+/* :where() keeps this at zero specificity so it stays a *baseline* — the motion
+   utilities at the bottom of this file (.lift, .btn-brand, …) declare their own
+   transitions and must be able to win. */
+:where(#public-theme-root) :where(*, *::before, *::after) {
   transition-property: background-color, border-color, color, fill, stroke, opacity;
   transition-duration: 180ms;
   transition-timing-function: ease;
@@ -175,9 +227,7 @@
   box-shadow: var(--surface-shadow);
 }
 
-#admin-theme-root *,
-#admin-theme-root *::before,
-#admin-theme-root *::after {
+:where(#admin-theme-root) :where(*, *::before, *::after) {
   transition-property: background-color, border-color, color, fill, stroke, opacity;
   transition-duration: 180ms;
   transition-timing-function: ease;
@@ -219,9 +269,16 @@
   box-shadow: var(--surface-shadow);
 }
 
-#portal-theme-root *,
-#portal-theme-root *::before,
-#portal-theme-root *::after {
+/* Pre-hydration twin of the rule above — see the note on #public-theme-root. */
+@media (prefers-color-scheme: light) {
+  #portal-theme-root:not([data-theme]) .portal-main-surface [class*="rounded-2xl"][class*="border"],
+  #portal-theme-root:not([data-theme]) .portal-main-surface [class*="rounded-xl"][class*="border"] {
+    background-color: var(--surface-bg);
+    box-shadow: var(--surface-shadow);
+  }
+}
+
+:where(#portal-theme-root) :where(*, *::before, *::after) {
   transition-property: background-color, border-color, color, fill, stroke, opacity;
   transition-duration: 180ms;
   transition-timing-function: ease;
@@ -231,4 +288,500 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===========================================================================
+   Motion layer — the public site's "alive" feel (conference-site inspired):
+   an animated hero backdrop, scroll reveals, hover lift on cards, a sponsor
+   logo marquee and a live countdown.
+
+   Rules:
+   - Every effect is opt-in via a class, so the admin CMS is untouched.
+   - Colors are derived from --brand / --brand-accent, so per-event branding
+     and the light/dark switcher drive the motion palette for free.
+   - The `prefers-reduced-motion` block at the bottom turns ALL of it off and
+     leaves every revealed element visible.
+   =========================================================================== */
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, var(--reveal-y, 1.75rem), 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aurora-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(6%, 4%, 0) scale(1.12);
+  }
+  66% {
+    transform: translate3d(-4%, -3%, 0) scale(0.94);
+  }
+}
+
+@keyframes sheen {
+  from {
+    transform: translateX(-130%) skewX(-18deg);
+  }
+  to {
+    transform: translateX(230%) skewX(-18deg);
+  }
+}
+
+@keyframes marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    /* The track renders its items twice, so -50% is one seamless loop. */
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@keyframes gradient-pan {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes tick-in {
+  from {
+    opacity: 0;
+    transform: translateY(-35%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes scroll-hint {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: translateY(0.35rem);
+    opacity: 1;
+  }
+}
+
+@keyframes live-pulse {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--brand-accent) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 0.5rem transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+/* --- Scroll reveal ---------------------------------------------------------
+   `data-js` is stamped on <html> by an inline script in the root layout before
+   first paint. Without JS the elements are simply visible — never a blank page.
+   The IntersectionObserver in components/reveal.tsx flips data-reveal="in". */
+[data-js] .reveal {
+  opacity: 0;
+}
+
+[data-js] .reveal[data-reveal="in"] {
+  animation: reveal-in 750ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--reveal-delay, 0ms);
+}
+
+/* --- Card hover lift -------------------------------------------------------
+   The glow lives on ::after because the light-theme surface rules in this file
+   already own the card's own `box-shadow` at a higher specificity. */
+.lift {
+  position: relative;
+  transition:
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 240ms ease;
+}
+
+.lift::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 320ms ease;
+  box-shadow: 0 1.25rem 2.5rem -0.75rem color-mix(in oklab, var(--brand-accent) 40%, transparent);
+}
+
+.lift:hover,
+.lift:focus-visible {
+  transform: translateY(-0.25rem);
+  border-color: color-mix(in oklab, var(--brand-accent) 55%, transparent);
+}
+
+.lift:hover::after,
+.lift:focus-visible::after {
+  opacity: 1;
+}
+
+/* --- Brand button: sheen sweep + press ------------------------------------ */
+.btn-brand {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 240ms ease;
+}
+
+.btn-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    100deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.55) 50%,
+    transparent 68%
+  );
+  transform: translateX(-130%) skewX(-18deg);
+}
+
+.btn-brand:hover {
+  transform: translateY(-0.0625rem);
+  box-shadow: 0 0.75rem 1.5rem -0.625rem color-mix(in oklab, var(--brand) 70%, transparent);
+}
+
+.btn-brand:hover::before {
+  animation: sheen 900ms ease;
+}
+
+.btn-brand:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* --- Ghost button --------------------------------------------------------- */
+.btn-ghost {
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 200ms ease,
+    background-color 200ms ease;
+}
+
+.btn-ghost:hover {
+  transform: translateY(-0.0625rem);
+  border-color: color-mix(in oklab, var(--brand-accent) 65%, transparent);
+  /* --tint, not color-mix(): see the note on --tint. A color-mix() fallback here
+     would flood the ghost button with solid brand color and bury its label. */
+  background-color: var(--tint);
+}
+
+.btn-ghost:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* --- Admin CMS ------------------------------------------------------------
+   The CMS deliberately shares the public site's vocabulary rather than growing
+   its own: its cards carry `.lift` and its nav carries `.nav-link`, the same
+   two classes the public site uses, so a hover means the same thing on both
+   sides of the product. What it does NOT get is the showpiece motion — no
+   scroll reveals, no aurora, no marquee, no sticky header. Those belong on a
+   landing page, not on a tool you stare at all day.
+
+   Only the things below have no public-site counterpart. */
+
+/* Row hover on every CMS table. The seven of them share one shape (a plain
+   <tbody> with divide-y rows and no hover state), so a single rule covers them
+   all — dashboard, candidates, submissions, packages, events, email center and
+   the analytics breakdown.
+
+   It needs no `transition`: the baseline rule further down already fades
+   background-color across everything under #admin-theme-root. --tint follows
+   the theme (cool blue in light, warm gold in dark) and stays legible over the
+   cream card surface underneath. */
+#admin-theme-root .admin-main-surface tbody tr:hover {
+  background-color: var(--tint);
+}
+
+/* The CMS's primary action is a solid `bg-foreground text-background` pill.
+   Give it the same press + sheen as the public brand button. The sheen is mixed
+   from --background, i.e. the button's own text color — so it stays visible on
+   the near-black pill in light and the near-white one in dark. */
+#admin-theme-root button[class*="bg-foreground"],
+#admin-theme-root a[class*="bg-foreground"] {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 240ms ease;
+}
+
+#admin-theme-root button[class*="bg-foreground"]::before,
+#admin-theme-root a[class*="bg-foreground"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(
+    100deg,
+    transparent 32%,
+    color-mix(in oklab, var(--background) 55%, transparent) 50%,
+    transparent 68%
+  );
+  transform: translateX(-130%) skewX(-18deg);
+}
+
+#admin-theme-root button[class*="bg-foreground"]:hover:not(:disabled),
+#admin-theme-root a[class*="bg-foreground"]:hover {
+  transform: translateY(-0.0625rem);
+  box-shadow: 0 0.625rem 1.25rem -0.75rem color-mix(in oklab, var(--foreground) 55%, transparent);
+}
+
+#admin-theme-root button[class*="bg-foreground"]:hover:not(:disabled)::before,
+#admin-theme-root a[class*="bg-foreground"]:hover::before {
+  animation: sheen 900ms ease;
+}
+
+#admin-theme-root button[class*="bg-foreground"]:active:not(:disabled),
+#admin-theme-root a[class*="bg-foreground"]:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* --- Nav link: underline that wipes in from the left ---------------------- */
+.nav-link {
+  position: relative;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -0.375rem;
+  height: 0.125rem;
+  border-radius: 0.125rem;
+  background: var(--brand-accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-link:hover::after,
+.nav-link[aria-current="page"]::after {
+  transform: scaleX(1);
+}
+
+/* --- Hero backdrop: drifting aurora blobs + a masked grid ------------------ */
+.hero-stage {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.hero-stage > * {
+  position: relative;
+  z-index: 1;
+}
+
+.aurora {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.aurora::before,
+.aurora::after {
+  content: "";
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(4rem);
+  will-change: transform;
+}
+
+.aurora::before {
+  width: 34rem;
+  height: 34rem;
+  top: -12rem;
+  left: -8rem;
+  opacity: 0.45;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--glow-1) 70%, transparent),
+    transparent 70%
+  );
+  animation: aurora-drift 19s ease-in-out infinite;
+}
+
+.aurora::after {
+  width: 28rem;
+  height: 28rem;
+  top: -6rem;
+  right: -7rem;
+  opacity: 0.4;
+  background: radial-gradient(
+    circle,
+    color-mix(in oklab, var(--glow-2) 60%, transparent),
+    transparent 70%
+  );
+  animation: aurora-drift 26s ease-in-out infinite reverse;
+}
+
+.grid-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.55;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 3.5rem 3.5rem;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 25%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 25%, transparent 75%);
+}
+
+/* --- Animated gradient headline ------------------------------------------- */
+.gradient-ink {
+  background: linear-gradient(
+    100deg,
+    var(--foreground) 0%,
+    var(--brand-accent) 42%,
+    var(--foreground) 84%
+  );
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: gradient-pan 9s ease-in-out infinite;
+  /* Descenders (g, y, p) get clipped without a little breathing room. */
+  padding-bottom: 0.08em;
+}
+
+/* --- Countdown ------------------------------------------------------------- */
+.tick {
+  display: inline-block;
+  animation: tick-in 420ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.live-dot {
+  animation: live-pulse 2.2s ease-out infinite;
+}
+
+/* --- Sponsor logo marquee -------------------------------------------------- */
+.marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee var(--marquee-duration, 42s) linear infinite;
+  will-change: transform;
+}
+
+.marquee:hover .marquee-track,
+.marquee:focus-within .marquee-track {
+  animation-play-state: paused;
+}
+
+/* --- Scroll cue + reading-progress bar ------------------------------------ */
+.scroll-cue {
+  animation: scroll-hint 1.9s ease-in-out infinite;
+}
+
+.scroll-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 0.1875rem;
+  transform: scaleX(var(--scroll-progress, 0));
+  transform-origin: 0 50%;
+  /* Both hues, so the bar isn't a flat block of one color in either theme. */
+  background: linear-gradient(90deg, var(--glow-1), var(--glow-2));
+  pointer-events: none;
+}
+
+/* --- Sticky header, condensed once the page scrolls ----------------------- */
+#public-theme-root > header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  transition:
+    box-shadow 260ms ease,
+    background-color 260ms ease;
+}
+
+#public-theme-root > header[data-scrolled="true"] {
+  box-shadow: 0 0.75rem 1.875rem -0.875rem rgba(0, 0, 0, 0.32);
+}
+
+#public-theme-root > header[data-scrolled="true"] .header-bar {
+  padding-top: 0.625rem;
+  padding-bottom: 0.625rem;
+}
+
+.header-bar {
+  transition:
+    padding-top 260ms ease,
+    padding-bottom 260ms ease;
+}
+
+/* --- Respect the user's motion preference --------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  [data-js] .reveal,
+  [data-js] .reveal[data-reveal="in"] {
+    opacity: 1;
+    animation: none;
+  }
+
+  .aurora::before,
+  .aurora::after,
+  .marquee-track,
+  .btn-brand:hover::before,
+  #admin-theme-root button[class*="bg-foreground"]:hover:not(:disabled)::before,
+  #admin-theme-root a[class*="bg-foreground"]:hover::before,
+  .scroll-cue,
+  .live-dot,
+  .tick,
+  .gradient-ink {
+    animation: none;
+  }
+
+  .gradient-ink {
+    background: none;
+    color: inherit;
+    -webkit-text-fill-color: currentColor;
+  }
+
+  .lift:hover,
+  .lift:focus-visible,
+  .btn-brand:hover,
+  .btn-brand:active,
+  .btn-ghost:hover,
+  .btn-ghost:active,
+  #admin-theme-root button[class*="bg-foreground"]:hover:not(:disabled),
+  #admin-theme-root a[class*="bg-foreground"]:hover,
+  #admin-theme-root button[class*="bg-foreground"]:active:not(:disabled),
+  #admin-theme-root a[class*="bg-foreground"]:active {
+    transform: none;
+  }
 }

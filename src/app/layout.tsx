@@ -52,7 +52,20 @@ export default async function RootLayout({
     <html
       lang={language}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // The script below stamps `data-js` on this element before React hydrates,
+      // so <html> deliberately differs from the server HTML. Same pattern as any
+      // pre-paint theme script; without this React reports a hydration mismatch.
+      // Scoped to <html>'s own attributes — it does not cascade to the tree.
+      suppressHydrationWarning
     >
+      <head>
+        {/* Gates the scroll-reveal animations in globals.css on JS being alive.
+            Runs before first paint, so revealed content starts hidden with JS
+            (no flash) and stays visible without it (no blank page). */}
+        <script
+          dangerouslySetInnerHTML={{ __html: `document.documentElement.dataset.js="1"` }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
         {children}
       </body>

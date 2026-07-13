@@ -1,5 +1,6 @@
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { ScrollEffects } from "@/components/scroll-effects";
 import { getCurrentEvent } from "@/lib/event";
 import { customBrandVars } from "@/lib/event-content";
 import { PUBLIC_THEME_ROOT_ID } from "@/lib/site-themes";
@@ -35,6 +36,7 @@ export default async function PublicLayout({
       >
         Skip to content
       </a>
+      <ScrollEffects />
       <SiteHeader />
       <main
         id="main-content"

@@ -23,12 +23,14 @@ export const SITE_THEME_OPTIONS = [
     label: "Light",
     description: "Warm Athens light.",
     dataTheme: "light",
+    // Must stay in sync with `[data-theme="light"]` in globals.css — the
+    // switcher writes these as inline vars, which win over the stylesheet.
     colors: {
       background: "#fbf7ee",
       foreground: "#111827",
-      brand: "#93c5fd",
-      brandInk: "#0f172a",
-      brandAccent: "#2563eb",
+      brand: "#2563eb",
+      brandInk: "#ffffff",
+      brandAccent: "#1d4ed8",
     },
   },
   {

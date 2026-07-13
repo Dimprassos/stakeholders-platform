@@ -1,4 +1,5 @@
 import type { Package, Sponsor } from "@prisma/client";
+import { Reveal } from "@/components/reveal";
 import { tierLabel, tierRank } from "@/lib/format";
 
 // Shared by the main site (/sponsors) and the per-event pages
@@ -53,7 +54,10 @@ export function SponsorGrid({ sponsors }: { sponsors: SponsorWithPackage[] }) {
 
         return (
           <div key={tier}>
-            <div className="flex items-end justify-between gap-4 border-b border-black/10 pb-3 dark:border-white/10">
+            <Reveal
+              y="0.75rem"
+              className="flex items-end justify-between gap-4 border-b border-black/10 pb-3 dark:border-white/10"
+            >
               <div>
                 <p className={`text-xs font-semibold uppercase tracking-wide ${accent}`}>
                   {tierName}
@@ -64,12 +68,12 @@ export function SponsorGrid({ sponsors }: { sponsors: SponsorWithPackage[] }) {
                 </h2>
               </div>
               <p className="text-xs text-zinc-500">Confirmed and public</p>
-            </div>
+            </Reveal>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {sponsorsInTier.map((s) => {
+              {sponsorsInTier.map((s, i) => {
                 const cardClass =
-                  "block min-h-40 rounded-lg border border-black/10 p-5 transition-colors hover:border-brand-accent dark:border-white/10";
+                  "lift group block h-full min-h-40 rounded-lg border border-black/10 p-5 dark:border-white/10";
                 const content = (
                   <>
                     <div className="flex h-16 items-center justify-center">
@@ -80,10 +84,10 @@ export function SponsorGrid({ sponsors }: { sponsors: SponsorWithPackage[] }) {
                           alt={s.companyName}
                           loading="lazy"
                           decoding="async"
-                          className="max-h-12 max-w-full object-contain"
+                          className="max-h-12 max-w-full object-contain grayscale transition duration-300 group-hover:scale-105 group-hover:grayscale-0"
                         />
                       ) : (
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand text-sm font-semibold text-brand-ink">
+                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand text-sm font-semibold text-brand-ink transition-transform duration-300 group-hover:scale-110">
                           {sponsorInitials(s.companyName)}
                         </span>
                       )}
@@ -102,21 +106,22 @@ export function SponsorGrid({ sponsors }: { sponsors: SponsorWithPackage[] }) {
                   </>
                 );
 
-                return s.websiteUrl ? (
-                  <a
-                    key={s.id}
-                    href={s.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={s.companyName}
-                    className={cardClass}
-                  >
-                    {content}
-                  </a>
-                ) : (
-                  <div key={s.id} className={cardClass}>
-                    {content}
-                  </div>
+                return (
+                  <Reveal key={s.id} delay={i * 70}>
+                    {s.websiteUrl ? (
+                      <a
+                        href={s.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={s.companyName}
+                        className={cardClass}
+                      >
+                        {content}
+                      </a>
+                    ) : (
+                      <div className={cardClass}>{content}</div>
+                    )}
+                  </Reveal>
                 );
               })}
             </div>

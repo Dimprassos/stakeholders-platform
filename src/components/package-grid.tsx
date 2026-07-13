@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Package } from "@prisma/client";
+import { Reveal } from "@/components/reveal";
 import { formatPrice, parseBenefits, tierLabel } from "@/lib/format";
 
 // Shared by the main site (/packages) and the per-event pages
@@ -67,7 +68,7 @@ export function PackageGrid({
 
   return (
     <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-      {packages.map((pkg) => {
+      {packages.map((pkg, i) => {
         const benefits = parseBenefits(pkg.benefits);
         const slotsLeft =
           pkg.slotsTotal != null
@@ -76,7 +77,11 @@ export function PackageGrid({
         const style = tierStyle(pkg.tier);
 
         return (
-          <div key={pkg.id} className={`flex flex-col rounded-lg border p-6 ${style.border}`}>
+          <Reveal
+            key={pkg.id}
+            delay={i * 90}
+            className={`lift flex flex-col rounded-lg border p-6 ${style.border}`}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p
@@ -117,12 +122,12 @@ export function PackageGrid({
               )}
               <Link
                 href={`${becomeHref}?package=${pkg.id}`}
-                className="inline-block rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-ink transition-opacity hover:opacity-90"
+                className="btn-brand inline-block rounded-full bg-brand px-4 py-2 text-sm font-medium text-brand-ink"
               >
                 Become a sponsor
               </Link>
             </div>
-          </div>
+          </Reveal>
         );
       })}
     </div>

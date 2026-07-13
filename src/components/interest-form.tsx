@@ -205,7 +205,7 @@ export function InterestForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-ink transition-opacity hover:opacity-90 disabled:opacity-50"
+        className="btn-brand rounded-full bg-brand px-6 py-3 text-sm font-medium text-brand-ink disabled:opacity-50"
       >
         {pending ? "Sending…" : "Submit interest"}
       </button>
