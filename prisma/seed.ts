@@ -229,6 +229,125 @@ async function main() {
 
   // (Event identity — name, tagline, dates, venue — now lives on the Event above.)
 
+  // --- Agenda / programme (days must fall inside the event dates above) ---
+  const agenda = [
+    // Day 1 — 2026-10-21
+    {
+      day: "2026-10-21",
+      dayLabel: "Opening day",
+      startTime: "09:00",
+      endTime: "10:00",
+      title: "Registration & welcome coffee",
+      type: "REGISTRATION",
+      location: "Main foyer",
+    },
+    {
+      day: "2026-10-21",
+      startTime: "10:00",
+      endTime: "11:00",
+      title: "Opening keynote: the decade of partnerships",
+      type: "KEYNOTE",
+      location: "Banqueting Hall",
+      speaker: "Elena Marinos, Helios Energy Group",
+      description: "How industry leaders are rebuilding growth around long-term partner ecosystems.",
+    },
+    {
+      day: "2026-10-21",
+      startTime: "11:30",
+      endTime: "13:00",
+      title: "Panel: what sponsors actually want",
+      type: "SESSION",
+      location: "Hall A",
+      speaker: "Aegean Ventures, Attica Digital, Orion Mobility",
+    },
+    {
+      day: "2026-10-21",
+      startTime: "13:00",
+      endTime: "14:00",
+      title: "Networking lunch",
+      type: "BREAK",
+      location: "Partner area",
+    },
+    {
+      day: "2026-10-21",
+      startTime: "19:00",
+      title: "Welcome reception",
+      type: "SOCIAL",
+      location: "Rooftop terrace",
+    },
+    // Day 2 — 2026-10-22
+    {
+      day: "2026-10-22",
+      dayLabel: "Main conference",
+      startTime: "09:30",
+      endTime: "10:30",
+      title: "Keynote: measuring sponsorship ROI",
+      type: "KEYNOTE",
+      location: "Banqueting Hall",
+      speaker: "Nova Finance",
+    },
+    {
+      day: "2026-10-22",
+      startTime: "11:00",
+      endTime: "12:30",
+      title: "Workshop: building a sponsor pipeline",
+      type: "SESSION",
+      location: "Hall B",
+    },
+    {
+      day: "2026-10-22",
+      startTime: "12:30",
+      endTime: "13:30",
+      title: "Lunch break",
+      type: "BREAK",
+      location: "Partner area",
+    },
+    {
+      day: "2026-10-22",
+      startTime: "14:00",
+      endTime: "16:00",
+      title: "Partner demo showcase",
+      type: "SESSION",
+      location: "Exhibition floor",
+    },
+    // Day 3 — 2026-10-23
+    {
+      day: "2026-10-23",
+      dayLabel: "Closing day",
+      startTime: "10:00",
+      endTime: "11:30",
+      title: "Roundtable: sponsorship in 2027",
+      type: "SESSION",
+      location: "Hall A",
+    },
+    {
+      day: "2026-10-23",
+      startTime: "12:00",
+      endTime: "13:00",
+      title: "Closing keynote & awards",
+      type: "KEYNOTE",
+      location: "Banqueting Hall",
+      speaker: "The organizers",
+    },
+    {
+      day: "2026-10-23",
+      startTime: "13:00",
+      title: "Farewell drinks",
+      type: "SOCIAL",
+      location: "Rooftop terrace",
+    },
+  ];
+
+  for (const [i, item] of agenda.entries()) {
+    const id = `agenda-summit-${i + 1}`; // deterministic id so re-seeding is idempotent
+    const data = { eventId, displayOrder: i + 1, ...item };
+    await prisma.agendaItem.upsert({
+      where: { id },
+      update: data,
+      create: { id, ...data },
+    });
+  }
+
   // --- Default email template (sponsor invite) ---
   // Merge fields: {{companyName}}, {{packageName}}, {{event}}, {{link}}
   await prisma.emailTemplate.upsert({
@@ -268,13 +387,14 @@ The organizers of {{event}}`,
     },
   });
 
-  const [userCount, pkgCount, sponsorCount] = await Promise.all([
+  const [userCount, pkgCount, sponsorCount, agendaCount] = await Promise.all([
     prisma.user.count(),
     prisma.package.count(),
     prisma.sponsor.count(),
+    prisma.agendaItem.count({ where: { eventId } }),
   ]);
   console.log(
-    `Seed complete: 1 event, ${userCount} admin, ${pkgCount} packages, ${sponsorCount} sponsors.`,
+    `Seed complete: 1 event, ${userCount} admin, ${pkgCount} packages, ${sponsorCount} sponsors, ${agendaCount} agenda items.`,
   );
 }
 

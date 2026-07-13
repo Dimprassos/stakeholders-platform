@@ -1,6 +1,15 @@
 # All commits shown here from last to first and on which branch.
-main branch:
-c8a5692 (HEAD -> main, origin/main) feat: payments & contracts added plus also sponsors can now log in
+
+# main branch:
+
+# (HEAD -> main, origin/main)
+b0fff55 status were not actively sending requests to the servers, now they do
+b0c0b15 Passwordless sponsor portal recovery: email me a sign-in link
+c7b9af0 Site brand from env for main chrome; per-event branding stays on event pages
+094da54 Sponsor portal redesign, onboarding return flow, shared theme switcher, review fixes
+39e9bce Fix sponsor portal account and duplicate payment flows
+0a2fd86 FINAL: admin side email, notif/s, event handling
+c8a5692 feat: payments & contracts added plus also sponsors can now log in
 31a2cb3 feat: analytics section added for admin
 ed90e56 admin mail event handler
 bb1a6c8 FINAL FOR THEMES
@@ -27,12 +36,16 @@ bcf3cb8 feat: public packages, sponsors showcase and interest form
 41e146d feat: switch DB to SQLite, add first migration + seed
 3e63603 first commit- phase 0 completed
 
-multi-event foundation:
-919c218 (HEAD -> main, origin/main, multi-event-foundation) final before merge (merged with main here)
+# multi-event foundation:
+
+# (HEAD -> main, origin/main, multi-event-foundation) 
+919c218 final before merge (merged with main here)
 81c4054 feat: mirror multi-event schema to Postgres + fix homepage build-time prerender (Phase A prod)
 bbdee9c feat: multi-event query-scoping + admin event switcher (Phase A step 2)
 833c29c feat: multi-event foundation — Event model + eventId scoping (Phase A step 1)
 
-event-content-branding
-4cfe3c8 (HEAD ->event-content-branding) docs: changelog note for Phase B deploy
-95eec84 (event-content-branding) feat: event content & branding (Phase B) — FAQ, deadlines, theme, logo/banner 
+# event-content-branding
+
+# (HEAD ->event-content-branding)
+4cfe3c8  docs: changelog note for Phase B deploy
+95eec84  feat: event content & branding (Phase B) — FAQ, deadlines, theme, logo/banner 
