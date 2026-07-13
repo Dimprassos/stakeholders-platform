@@ -37,7 +37,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
-!.env.example
+.env.example
 
 # vercel
 .vercel
@@ -49,3 +49,10 @@ next-env.d.ts
 # database (sqlite)
 *.db
 *.db-journal
+
+CHANGELOG.md
+CLAUDE.md
+AGENTS.md
+/.docs/
+others_project.txt
+Project.txt
