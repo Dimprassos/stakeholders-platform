@@ -58,3 +58,15 @@ export async function findSponsorsByContactEmail(eventId: string, email: string)
 export async function findSponsorAccountsByEmail(email: string) {
   return findSponsorRowsByEmail({ passwordHash: { not: null } }, email);
 }
+
+/**
+ * Sponsors with this contact email who can reach a portal — with or without a
+ * password. Backs the passwordless "email me a sign-in link" flow, so a sponsor
+ * who never set a password and lost their invite email isn't locked out.
+ */
+export async function findPortalSponsorsByEmail(email: string) {
+  return findSponsorRowsByEmail(
+    { status: { in: [...SPONSOR_ACCOUNT_STATUSES] } },
+    email,
+  );
+}

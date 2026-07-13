@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getCurrentSponsorId } from "@/lib/sponsor-auth";
 import { getEventSettings } from "@/lib/event";
 import { SponsorLoginForm } from "./login-form";
+import { SponsorLinkRequestForm } from "./link-request-form";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +29,17 @@ export default async function SponsorLoginPage() {
 
         <SponsorLoginForm />
 
-        <p className="mt-6 text-xs text-zinc-500">
-          No password yet? Open the personal link from your invitation email and
-          set one under “Account”. Lost the link?{" "}
-          <Link href="/" className="underline underline-offset-4">
-            Contact the organizers
-          </Link>
-          .
-        </p>
+        {/* Passwordless recovery — a sponsor who never set a password (and lost
+            their invite email) would otherwise have no way back into a portal
+            they may already have paid for. */}
+        <div className="mt-10 border-t border-black/10 pt-6 dark:border-white/10">
+          <h2 className="text-sm font-semibold">No password? Lost your link?</h2>
+          <p className="mt-1 mb-4 text-xs text-zinc-500">
+            We&apos;ll email your personal portal link — no password needed. You can
+            set one from the portal afterwards.
+          </p>
+          <SponsorLinkRequestForm />
+        </div>
       </div>
     </main>
   );
