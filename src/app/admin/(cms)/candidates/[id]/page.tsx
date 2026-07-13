@@ -7,6 +7,10 @@ import { parseDeliverables, deliverableProgress } from "@/lib/deliverables";
 import { isStripeConfigured } from "@/lib/stripe";
 import { CONTRACT_STATUS_LABEL, defaultContractBody } from "@/lib/contracts";
 import { threadParam } from "@/lib/communication";
+import {
+  blockedReason,
+  SPONSOR_STATUS_LABEL as STATUS_LABELS,
+} from "@/lib/sponsor-lifecycle";
 import { ActionForm } from "../../action-form";
 import { toggleTaskAction, deleteTaskAction } from "../actions";
 import {
@@ -31,15 +35,6 @@ import { DeliverablesForm } from "./deliverables-form";
 import { AddTaskForm } from "./add-task-form";
 
 export const dynamic = "force-dynamic";
-
-const STATUS_LABELS: Record<string, string> = {
-  LEAD: "Lead",
-  INVITE_SENT: "Invite sent",
-  ACCEPTED: "Accepted",
-  DETAILS_SUBMITTED: "Details submitted",
-  CONFIRMED: "Confirmed",
-  DECLINED: "Declined",
-};
 
 const STATUS_TONE: Record<string, string> = {
   LEAD: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
@@ -129,6 +124,7 @@ export default async function SponsorDetailPage({
   const contractBodyErr = sp.conerr === "body";
   const replyLogged = sp.replyLogged === "1";
   const communicationBodyErr = sp.commerr === "body";
+  const blocked = typeof sp.blocked === "string" ? sp.blocked.slice(0, 300) : null;
   const mailPreview = typeof sp.preview === "string" ? sp.preview : null;
   const eventId = await getAdminEventId();
   const event = await getAdminEvent();
@@ -149,6 +145,11 @@ export default async function SponsorDetailPage({
 
   const canReview =
     sponsor.status === "DETAILS_SUBMITTED" || sponsor.status === "CONFIRMED";
+
+  // The same rule table the server actions enforce, so each panel is disabled
+  // exactly when the action behind it would refuse (@/lib/sponsor-lifecycle).
+  const cannotContract = blockedReason(sponsor, "contract");
+  const cannotPay = blockedReason(sponsor, "payment");
 
   const deliverables = parseDeliverables(sponsor.deliverables);
   const { done: dlvDone, total: dlvTotal } = deliverableProgress(deliverables);
@@ -195,6 +196,7 @@ export default async function SponsorDetailPage({
         : null,
     });
   const contractLocked = editableContract?.status === "SENT";
+  const contractFormLocked = contractLocked || !!cannotContract;
 
   const communications = await prisma.outreach.findMany({
     where: { sponsorId: sponsor.id, eventId },
@@ -240,6 +242,11 @@ export default async function SponsorDetailPage({
         </div>
       </div>
 
+      {blocked && (
+        <div className="rounded-xl border border-red-600/30 bg-red-600/5 p-3 text-sm text-red-700 dark:text-red-400">
+          {blocked}
+        </div>
+      )}
       {payErr && (
         <div className="rounded-xl border border-red-600/30 bg-red-600/5 p-3 text-sm text-red-700 dark:text-red-400">
           Enter a valid amount to request a payment.
@@ -578,7 +585,7 @@ export default async function SponsorDetailPage({
               required
               maxLength={120}
               defaultValue={contractTitle}
-              disabled={contractLocked}
+              disabled={contractFormLocked}
               className="mt-1 w-full rounded-lg border border-black/15 bg-transparent px-3 py-1.5 text-sm text-foreground disabled:opacity-60 dark:border-white/20"
             />
           </label>
@@ -589,15 +596,16 @@ export default async function SponsorDetailPage({
               required
               rows={12}
               defaultValue={contractBody}
-              disabled={contractLocked}
+              disabled={contractFormLocked}
               className="mt-1 w-full rounded-lg border border-black/15 bg-transparent px-3 py-2 text-sm leading-6 text-foreground disabled:opacity-60 dark:border-white/20"
             />
           </label>
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="submit"
-              disabled={contractLocked}
-              className="rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-50"
+              disabled={contractFormLocked}
+              title={cannotContract ?? undefined}
+              className="rounded-full bg-foreground px-4 py-1.5 text-sm font-medium text-background transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {contractLocked
                 ? "Awaiting signature"
@@ -609,15 +617,19 @@ export default async function SponsorDetailPage({
               <button
                 type="submit"
                 formAction={saveAndSendContractAction}
-                className="rounded-full border border-blue-600/40 px-4 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:border-blue-700 dark:text-blue-400"
+                disabled={!!cannotContract}
+                title={cannotContract ?? undefined}
+                className="rounded-full border border-blue-600/40 px-4 py-1.5 text-sm font-medium text-blue-700 transition-colors hover:border-blue-700 disabled:cursor-not-allowed disabled:opacity-50 dark:text-blue-400"
               >
                 Save & send for signature
               </button>
             )}
             <p className="text-xs text-zinc-500">
-              {contractLocked
-                ? "Move it back to draft before editing the agreement text."
-                : "The sponsor sees this in their portal once you send it."}
+              {cannotContract
+                ? cannotContract
+                : contractLocked
+                  ? "Move it back to draft before editing the agreement text."
+                  : "The sponsor sees this in their portal once you send it."}
             </p>
           </div>
         </form>
@@ -778,7 +790,11 @@ export default async function SponsorDetailPage({
           </ul>
         )}
 
-        {pendingTotal > 0 ? (
+        {cannotPay ? (
+          <p className="mt-4 rounded-lg border border-dashed border-black/10 px-3 py-2 text-xs text-zinc-500 dark:border-white/10">
+            {cannotPay}
+          </p>
+        ) : pendingTotal > 0 ? (
           <p className="mt-4 rounded-lg border border-dashed border-black/10 px-3 py-2 text-xs text-zinc-500 dark:border-white/10">
             Resolve the open pending payment above before requesting another one.
           </p>

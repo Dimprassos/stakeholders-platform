@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { addCandidateAction } from "./actions";
 import { INITIAL_CANDIDATE_STATE } from "./types";
 import type { PackageOption } from "./page";
@@ -16,23 +16,16 @@ export function AddCandidateForm({ packages }: { packages: PackageOption[] }) {
     INITIAL_CANDIDATE_STATE,
   );
   const errors = state.errors ?? {};
+  const formRef = useRef<HTMLFormElement>(null);
 
-  if (state.ok) {
-    return (
-      <div className="rounded-xl border border-green-600/30 bg-green-600/5 p-4">
-        <p className="text-sm font-medium text-green-700 dark:text-green-400">
-          {state.message}
-        </p>
-        <button
-          type="button"
-          onClick={() => setOpen(false)}
-          className="mt-2 text-xs underline underline-offset-4"
-        >
-          Add another
-        </button>
-      </div>
-    );
-  }
+  // The form stays mounted after a successful add and simply clears itself, so
+  // several candidates can be entered in a row. (Previously the success screen
+  // replaced the form and `state.ok` could never be cleared — "Add another" just
+  // re-rendered the same screen, so a full page reload was the only way back.)
+  // `pending` flips on every submit, so this re-runs for each new success.
+  useEffect(() => {
+    if (!pending && state.ok) formRef.current?.reset();
+  }, [pending, state.ok]);
 
   if (!open) {
     return (
@@ -47,8 +40,18 @@ export function AddCandidateForm({ packages }: { packages: PackageOption[] }) {
   }
 
   return (
-    <form action={formAction} className="space-y-4 rounded-xl border border-black/10 p-5 dark:border-white/10" noValidate>
-      {state.message && (
+    <form
+      ref={formRef}
+      action={formAction}
+      className="space-y-4 rounded-xl border border-black/10 p-5 dark:border-white/10"
+      noValidate
+    >
+      {state.ok && state.message && (
+        <p className="rounded-lg border border-green-600/30 bg-green-600/5 px-3 py-2 text-sm text-green-700 dark:text-green-400">
+          {state.message} You can add another below.
+        </p>
+      )}
+      {state.message && !state.ok && (
         <p className="rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">
           {state.message}
         </p>

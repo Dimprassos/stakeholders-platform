@@ -5,20 +5,27 @@ import { sendInviteAction, type InviteState } from "./invite-actions";
 
 export function SendInviteForm({
   sponsorId,
-  disabled,
+  resend,
+  disabledReason,
 }: {
   sponsorId: string;
-  disabled?: boolean;
+  resend?: boolean;
+  /** From `can(sponsor, "invite")` — the same reason the server action gives. */
+  disabledReason?: string | null;
 }) {
   const bound = sendInviteAction.bind(null, sponsorId) as (
     state: InviteState,
   ) => Promise<InviteState>;
   const [state, formAction, pending] = useActionState(bound, { ok: false });
+  const label = resend ? "Resend invite" : "Send invite";
 
-  if (disabled) {
+  if (disabledReason) {
     return (
-      <span className="text-xs text-zinc-400">
-        Send invite (needs package + email)
+      <span
+        title={disabledReason}
+        className="cursor-not-allowed text-xs text-zinc-400"
+      >
+        {label}
       </span>
     );
   }
@@ -31,7 +38,7 @@ export function SendInviteForm({
           disabled={pending}
           className="text-xs font-medium text-foreground underline underline-offset-4 disabled:opacity-50"
         >
-          {pending ? "Sending…" : "Send invite"}
+          {pending ? "Sending…" : label}
         </button>
       </form>
       {state.message && (

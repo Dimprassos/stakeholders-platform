@@ -15,7 +15,12 @@ function Detail({ label, value }: { label: string; value: string | null | undefi
   );
 }
 
-export default async function OnboardingReviewPage() {
+export default async function OnboardingReviewPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ blocked?: string }>;
+}) {
+  const { blocked } = await searchParams;
   const eventId = await getAdminEventId();
   const [pending, reviewed] = await Promise.all([
     prisma.sponsor.findMany({
@@ -39,6 +44,12 @@ export default async function OnboardingReviewPage() {
           the published showcase.
         </p>
       </div>
+
+      {blocked && (
+        <p className="rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">
+          {blocked.slice(0, 300)}
+        </p>
+      )}
 
       <section>
         <h2 className="text-lg font-semibold">Awaiting review ({pending.length})</h2>
@@ -94,15 +105,9 @@ export default async function OnboardingReviewPage() {
                       Confirm &amp; publish
                     </button>
                   </ActionForm>
-                  <ActionForm action={togglePublishAction}>
-                    <input type="hidden" name="id" value={s.id} />
-                    <button
-                      type="submit"
-                      className="rounded-full border border-black/15 px-5 py-2 text-sm font-medium transition-colors hover:border-foreground dark:border-white/20"
-                    >
-                      {s.isPublished ? "Unpublish" : "Publish only"}
-                    </button>
-                  </ActionForm>
+                  {/* No "Publish only" here: a sponsor must be CONFIRMED before
+                      they can be published, so "Confirm & publish" is the only
+                      route out of this stage. */}
                   <ActionForm action={toggleHiddenAction}>
                     <input type="hidden" name="id" value={s.id} />
                     <button

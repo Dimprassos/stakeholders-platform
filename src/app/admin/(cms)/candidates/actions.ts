@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isPackageFull, SLOT_HOLDING_STATUSES } from "@/lib/slots";
 import { getAdminEventId } from "@/lib/event";
+import { can, blockedUrl } from "@/lib/sponsor-lifecycle";
 import { DELIVERABLE_TYPES } from "@/lib/deliverables";
 import {
   findSponsorsByContactEmail,
@@ -101,8 +102,10 @@ export async function setStatusAction(formData: FormData): Promise<void> {
   if (!id) return;
   if (!PIPELINE_STATUSES.includes(status as never)) return;
 
-  const sponsor = await prisma.sponsor.findUnique({
-    where: { id },
+  // Scope to the admin's current event so one event's page can't mutate another's.
+  const eventId = await getAdminEventId();
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id, eventId },
     select: { status: true, packageId: true, package: { select: { name: true } } },
   });
   if (!sponsor) return;
@@ -123,8 +126,23 @@ export async function setStatusAction(formData: FormData): Promise<void> {
 
   await prisma.sponsor.update({
     where: { id },
-    // Leaving CONFIRMED must not leave a stale public listing behind.
-    data: status === "CONFIRMED" ? { status } : { status, isPublished: false },
+    data:
+      status === "CONFIRMED"
+        ? { status }
+        : status === "DECLINED"
+          ? {
+              // Declining must REVOKE portal access, exactly like the sponsor-side
+              // declineAction. Without this the candidate keeps a working magic
+              // link and can still accept, submit details and even pay after the
+              // organizer has rejected them.
+              status,
+              isPublished: false,
+              magicToken: null,
+              tokenIssuedAt: null,
+              tokenExpiresAt: null,
+            }
+          : // Leaving CONFIRMED must not leave a stale public listing behind.
+            { status, isPublished: false },
   });
   revalidatePath("/admin/candidates");
   revalidatePath("/admin");
@@ -136,26 +154,30 @@ export async function assignPackageAction(formData: FormData): Promise<void> {
   const packageId = String(formData.get("packageId") ?? "");
   if (!id) return;
 
+  const eventId = await getAdminEventId();
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id, eventId },
+    select: { status: true, packageId: true },
+  });
+  if (!sponsor) return;
+
+  const verdict = can(sponsor, "assignPackage");
+  if (!verdict.ok) redirect(blockedUrl("/admin/candidates", verdict.reason));
+
   // Slot guard: only when an existing slot-holder moves onto a DIFFERENT, full
-  // package (re-selecting the same package is a no-op; an untouched LEAD /
-  // DECLINED one can be parked on any package freely).
-  if (packageId) {
-    const sponsor = await prisma.sponsor.findUnique({
-      where: { id },
-      select: { status: true, packageId: true },
+  // package (re-selecting the same package is a no-op; an untouched LEAD one can
+  // be parked on any package freely).
+  if (
+    packageId &&
+    sponsor.packageId !== packageId &&
+    SLOT_HOLDING_STATUSES.includes(sponsor.status) &&
+    (await isPackageFull(packageId, id))
+  ) {
+    const pkg = await prisma.package.findUnique({
+      where: { id: packageId },
+      select: { name: true },
     });
-    if (
-      sponsor &&
-      sponsor.packageId !== packageId &&
-      SLOT_HOLDING_STATUSES.includes(sponsor.status) &&
-      (await isPackageFull(packageId, id))
-    ) {
-      const pkg = await prisma.package.findUnique({
-        where: { id: packageId },
-        select: { name: true },
-      });
-      slotFullRedirect(pkg?.name ?? "package");
-    }
+    slotFullRedirect(pkg?.name ?? "package");
   }
 
   await prisma.sponsor.update({
@@ -281,15 +303,17 @@ export async function deleteTaskAction(formData: FormData): Promise<void> {
 export async function togglePublishAction(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const sponsor = await prisma.sponsor.findUnique({
-    where: { id },
+  const eventId = await getAdminEventId();
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id, eventId },
     select: { isPublished: true, status: true },
   });
   if (!sponsor) return;
 
   // Only a CONFIRMED sponsor may be published. Un-publishing is always allowed.
-  if (!sponsor.isPublished && sponsor.status !== "CONFIRMED") {
-    redirect("/admin/candidates?publishNeedsConfirm=1");
+  if (!sponsor.isPublished) {
+    const verdict = can(sponsor, "publish");
+    if (!verdict.ok) redirect(blockedUrl("/admin/candidates", verdict.reason));
   }
 
   await prisma.sponsor.update({

@@ -8,6 +8,7 @@ import { sendMail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { formatPrice } from "@/lib/format";
 import { isTokenExpired } from "@/lib/magic-token";
+import { can, blockedUrl } from "@/lib/sponsor-lifecycle";
 
 // Admin payment actions (docs/PLAN.md §16 Phase F). The admin raises payment
 // requests against a sponsor; the sponsor is emailed a link and pays via Stripe
@@ -36,6 +37,7 @@ export async function createPaymentAction(formData: FormData): Promise<void> {
     where: { id: sponsorId, eventId },
     select: {
       id: true,
+      status: true,
       companyName: true,
       contactName: true,
       contactEmail: true,
@@ -45,6 +47,13 @@ export async function createPaymentAction(formData: FormData): Promise<void> {
     },
   });
   if (!sponsor) return;
+
+  // Lifecycle guard: you cannot bill a candidate who has not accepted.
+  const verdict = can(sponsor, "payment");
+  if (!verdict.ok) {
+    redirect(blockedUrl(`/admin/candidates/${sponsorId}`, verdict.reason));
+  }
+
   if (!Number.isFinite(amount) || amount <= 0) {
     redirect(`/admin/candidates/${sponsorId}?payerr=amount`);
   }

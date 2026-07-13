@@ -7,7 +7,8 @@ import { sendMail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { renderTemplate } from "@/lib/template";
 import { isPackageFull } from "@/lib/slots";
-import { getEventSettings } from "@/lib/event";
+import { getAdminEventId, getEventSettings } from "@/lib/event";
+import { can } from "@/lib/sponsor-lifecycle";
 
 export type InviteState = { ok: boolean; message?: string; previewUrl?: string };
 
@@ -16,24 +17,24 @@ export async function sendInviteAction(
 ): Promise<InviteState> {
   if (!sponsorId) return { ok: false, message: "Missing sponsor id." };
 
-  const sponsor = await prisma.sponsor.findUnique({
-    where: { id: sponsorId },
+  // Scope to the admin's current event, like every other candidate action.
+  const eventId = await getAdminEventId();
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id: sponsorId, eventId },
     include: { package: true },
   });
   if (!sponsor) return { ok: false, message: "Sponsor not found." };
-  if (!sponsor.packageId || !sponsor.package) {
-    return {
-      ok: false,
-      message: "Assign a package before sending an invite.",
-    };
-  }
-  if (!sponsor.contactEmail) {
-    return { ok: false, message: "Candidate has no contact email." };
+
+  const verdict = can(sponsor, "invite");
+  if (!verdict.ok) return { ok: false, message: verdict.reason };
+  // `can()` guarantees both of these; narrow them for TypeScript.
+  if (!sponsor.package || !sponsor.contactEmail) {
+    return { ok: false, message: "Assign a package and a contact email first." };
   }
 
   // Slot guard: sending an invite moves the candidate to INVITE_SENT, which
   // occupies a slot. Refuse if the package is already full.
-  if (await isPackageFull(sponsor.packageId, sponsor.id)) {
+  if (await isPackageFull(sponsor.package.id, sponsor.id)) {
     const total = sponsor.package.slotsTotal;
     return {
       ok: false,
@@ -68,6 +69,25 @@ export async function sendInviteAction(
     ? renderTemplate(template.body, fields)
     : `Review your package and accept/decline: ${link}`;
 
+  // Persist the token BEFORE sending, so the link in the recipient's inbox is
+  // always one that works. If the send then fails we put the record back exactly
+  // as it was, rather than leaving the candidate marked as invited.
+  const previous = {
+    status: sponsor.status,
+    magicToken: sponsor.magicToken,
+    tokenIssuedAt: sponsor.tokenIssuedAt,
+    tokenExpiresAt: sponsor.tokenExpiresAt,
+  };
+  await prisma.sponsor.update({
+    where: { id: sponsorId },
+    data: {
+      magicToken: token,
+      tokenIssuedAt: issuedAt,
+      tokenExpiresAt: expiresAt,
+      status: "INVITE_SENT",
+    },
+  });
+
   let previewUrl: string | undefined;
   try {
     const result = await sendMail({
@@ -77,36 +97,26 @@ export async function sendInviteAction(
     });
     previewUrl = result.previewUrl;
   } catch (err) {
+    await prisma.sponsor.update({ where: { id: sponsorId }, data: previous });
     return {
       ok: false,
       message: `Email send failed: ${(err as Error).message}`,
     };
   }
 
-  // Persist token + log the outreach.
-  await prisma.$transaction([
-    prisma.sponsor.update({
-      where: { id: sponsorId },
-      data: {
-        magicToken: token,
-        tokenIssuedAt: issuedAt,
-        tokenExpiresAt: expiresAt,
-        status: "INVITE_SENT",
-      },
-    }),
-    prisma.outreach.create({
-      data: {
-        eventId: sponsor.eventId,
-        sponsorId,
-        templateId: template?.id ?? null,
-        prospectEmail: sponsor.contactEmail,
-        subject,
-        body: text,
-        status: "SENT",
-        sentAt: new Date(),
-      },
-    }),
-  ]);
+  // Log the outreach only once the email is actually on its way.
+  await prisma.outreach.create({
+    data: {
+      eventId: sponsor.eventId,
+      sponsorId,
+      templateId: template?.id ?? null,
+      prospectEmail: sponsor.contactEmail,
+      subject,
+      body: text,
+      status: "SENT",
+      sentAt: new Date(),
+    },
+  });
 
   revalidatePath("/admin/candidates");
   revalidatePath("/admin");

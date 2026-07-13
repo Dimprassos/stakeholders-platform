@@ -7,6 +7,7 @@ import { getAdminEventId, getEventSettings } from "@/lib/event";
 import { sendMail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { isTokenExpired } from "@/lib/magic-token";
+import { can, blockedUrl } from "@/lib/sponsor-lifecycle";
 
 // Admin contract actions (docs/PLAN.md §16 Phase F). Draft → send (emails the
 // sponsor a link) → the sponsor signs from their portal. All scoped to the
@@ -26,6 +27,23 @@ async function ownedContract(contractId: string) {
   });
 }
 
+/**
+ * The sponsor this contract work is for, in the admin's current event, once the
+ * lifecycle allows contracting. Redirects with the reason when it doesn't.
+ */
+async function contractableSponsor(sponsorId: string, eventId: string) {
+  const sponsor = await prisma.sponsor.findFirst({
+    where: { id: sponsorId, eventId },
+    select: { id: true, status: true },
+  });
+  if (!sponsor) return null;
+  const verdict = can(sponsor, "contract");
+  if (!verdict.ok) {
+    redirect(blockedUrl(`/admin/candidates/${sponsorId}`, verdict.reason));
+  }
+  return sponsor;
+}
+
 async function contractSendRedirect(contractId: string, eventId: string): Promise<string | null> {
   const contract = await prisma.contract.findFirst({
     where: { id: contractId, eventId },
@@ -33,6 +51,7 @@ async function contractSendRedirect(contractId: string, eventId: string): Promis
       sponsor: {
         select: {
           id: true,
+          status: true,
           companyName: true,
           contactName: true,
           contactEmail: true,
@@ -44,6 +63,13 @@ async function contractSendRedirect(contractId: string, eventId: string): Promis
   });
   if (!contract || contract.status === "SIGNED") return null;
   const sponsor = contract.sponsor;
+
+  // Guard here too: `sendContractAction` reaches this with only a contract id,
+  // so this is the only place its sponsor's status is known.
+  const verdict = can(sponsor, "contract");
+  if (!verdict.ok) {
+    return blockedUrl(`/admin/candidates/${sponsor.id}`, verdict.reason);
+  }
 
   await prisma.contract.update({
     where: { id: contract.id },
@@ -99,10 +125,7 @@ export async function saveContractAction(formData: FormData): Promise<void> {
   const body = str(formData, "body");
 
   const eventId = await getAdminEventId();
-  const sponsor = await prisma.sponsor.findFirst({
-    where: { id: sponsorId, eventId },
-    select: { id: true },
-  });
+  const sponsor = await contractableSponsor(sponsorId, eventId);
   if (!sponsor) return;
   if (!body) redirect(`/admin/candidates/${sponsorId}?conerr=body`);
 
@@ -129,10 +152,7 @@ export async function saveAndSendContractAction(formData: FormData): Promise<voi
   const body = str(formData, "body");
 
   const eventId = await getAdminEventId();
-  const sponsor = await prisma.sponsor.findFirst({
-    where: { id: sponsorId, eventId },
-    select: { id: true },
-  });
+  const sponsor = await contractableSponsor(sponsorId, eventId);
   if (!sponsor) return;
   if (!body) redirect(`/admin/candidates/${sponsorId}?conerr=body`);
 

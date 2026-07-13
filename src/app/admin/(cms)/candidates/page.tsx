@@ -11,19 +11,14 @@ import {
 import { PIPELINE_STATUSES } from "./types";
 import { getAdminEventId } from "@/lib/event";
 import { normalizeContactEmail } from "@/lib/sponsor-identity";
+import {
+  blockedReason,
+  SPONSOR_STATUS_LABEL as STATUS_LABELS,
+} from "@/lib/sponsor-lifecycle";
 
 export const dynamic = "force-dynamic";
 
 export type PackageOption = { id: string; name: string; tier: string };
-
-const STATUS_LABELS: Record<string, string> = {
-  LEAD: "Lead",
-  INVITE_SENT: "Invite sent",
-  ACCEPTED: "Accepted",
-  DETAILS_SUBMITTED: "Details submitted",
-  CONFIRMED: "Confirmed",
-  DECLINED: "Declined",
-};
 
 const STATUS_TONE: Record<string, string> = {
   LEAD: "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300",
@@ -40,10 +35,10 @@ export default async function CandidatesPage({
   searchParams: Promise<{
     status?: string;
     slotFull?: string;
-    publishNeedsConfirm?: string;
+    blocked?: string;
   }>;
 }) {
-  const { status, slotFull, publishNeedsConfirm } = await searchParams;
+  const { status, slotFull, blocked } = await searchParams;
   const validStatus =
     status && PIPELINE_STATUSES.includes(status as never) ? (status as string) : undefined;
 
@@ -87,10 +82,9 @@ export default async function CandidatesPage({
         </p>
       )}
 
-      {publishNeedsConfirm && (
+      {blocked && (
         <p className="rounded-lg border border-red-600/30 bg-red-600/5 px-3 py-2 text-sm text-red-700 dark:text-red-400">
-          Only <strong>Confirmed</strong> sponsors can be published — set the status to
-          Confirmed first.
+          {blocked.slice(0, 300)}
         </p>
       )}
 
@@ -122,7 +116,12 @@ export default async function CandidatesPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-black/5 dark:divide-white/5">
-              {sponsors.map((s) => (
+              {sponsors.map((s) => {
+                // Same rule table the server actions enforce, so a button is
+                // disabled exactly when the action behind it would refuse.
+                const cannotPublish = blockedReason(s, "publish");
+                const cannotInvite = blockedReason(s, "invite");
+                return (
                 <tr key={s.id} className="align-middle">
                   <td className="px-4 py-3 font-medium">
                     <Link
@@ -202,7 +201,8 @@ export default async function CandidatesPage({
                     </ActionForm>
                   </td>
                   <td className="px-4 py-3">
-                    {s.status === "CONFIRMED" ? (
+                    {/* Un-publishing stays available even when publishing isn't. */}
+                    {!cannotPublish || s.isPublished ? (
                       <ActionForm action={togglePublishAction}>
                         <input type="hidden" name="id" value={s.id} />
                         <button
@@ -218,7 +218,7 @@ export default async function CandidatesPage({
                       </ActionForm>
                     ) : (
                       <span
-                        title="Confirm this sponsor before publishing"
+                        title={cannotPublish}
                         className="cursor-not-allowed rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-400 dark:bg-zinc-900 dark:text-zinc-600"
                       >
                         Hidden
@@ -232,7 +232,6 @@ export default async function CandidatesPage({
                       year: "numeric",
                     })}
                   </td>
-                  {/* Onboarding details (legal name / VAT / etc) Phase 3 — for now just a link */}
                   <td className="px-4 py-3 text-right">
                     {s.status === "DETAILS_SUBMITTED" || s.status === "CONFIRMED" ? (
                       <div className="flex justify-end">
@@ -247,13 +246,15 @@ export default async function CandidatesPage({
                       <div className="flex justify-end">
                         <SendInviteForm
                           sponsorId={s.id}
-                          disabled={!s.packageId || !s.contactEmail}
+                          resend={s.status === "INVITE_SENT"}
+                          disabledReason={cannotInvite}
                         />
                       </div>
                     )}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
