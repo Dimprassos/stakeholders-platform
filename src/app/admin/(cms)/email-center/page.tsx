@@ -2,6 +2,8 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAdminEvent } from "@/lib/event";
 import { groupThreads, threadParam } from "@/lib/communication";
+import { ActionForm } from "../action-form";
+import { markReplyReadAction } from "../candidates/[id]/communication-actions";
 import { TemplateForm } from "./template-form";
 import { DeleteTemplateButton } from "./delete-template-button";
 import { ComposeForm } from "./compose-form";
@@ -282,6 +284,7 @@ export default async function EmailCenterPage({
                   <th className="px-4 py-3 font-medium">Template</th>
                   <th className="px-4 py-3 font-medium">Direction</th>
                   <th className="px-4 py-3 font-medium">Date</th>
+                  <th className="px-4 py-3 text-right font-medium">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-black/5 dark:divide-white/5">
@@ -335,6 +338,24 @@ export default async function EmailCenterPage({
                       </td>
                       <td className="px-4 py-3 text-zinc-500">
                         {fmtDateTime(item.receivedAt ?? item.sentAt ?? item.createdAt)}
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {/* The only place an inbound email from an address that
+                            matches no sponsor can be cleared: the candidate page
+                            and the thread view both need a sponsor, so without
+                            this such a reply stays unread — and keeps notifying —
+                            forever. */}
+                        {item.direction === "INBOUND" && !item.readAt && (
+                          <ActionForm action={markReplyReadAction} className="flex justify-end">
+                            <input type="hidden" name="messageId" value={item.id} />
+                            <button
+                              type="submit"
+                              className="whitespace-nowrap rounded-full border border-black/15 px-3 py-1 text-xs font-medium transition-colors hover:border-foreground dark:border-white/20"
+                            >
+                              Mark read
+                            </button>
+                          </ActionForm>
+                        )}
                       </td>
                     </tr>
                   );

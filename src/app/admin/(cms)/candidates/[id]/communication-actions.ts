@@ -67,6 +67,9 @@ export async function markReplyReadAction(formData: FormData): Promise<void> {
   });
   if (message.sponsorId) revalidatePath(`/admin/candidates/${message.sponsorId}`);
   revalidatePath("/admin/email-center");
+  // Unread replies feed the reminders list and the topbar badge.
+  revalidatePath("/admin/notifications");
+  revalidatePath("/admin");
 }
 
 export async function markSponsorRepliesReadAction(formData: FormData): Promise<void> {
@@ -84,4 +87,6 @@ export async function markSponsorRepliesReadAction(formData: FormData): Promise<
   });
   revalidatePath(`/admin/candidates/${sponsor.id}`);
   revalidatePath("/admin/email-center");
+  revalidatePath("/admin/notifications");
+  revalidatePath("/admin");
 }
