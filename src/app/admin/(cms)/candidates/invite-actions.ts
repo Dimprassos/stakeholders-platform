@@ -7,7 +7,7 @@ import { sendMail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { renderTemplate } from "@/lib/template";
 import { isPackageFull } from "@/lib/slots";
-import { getAdminEventId, getEventSettings } from "@/lib/event";
+import { getAdminEventId, getEventSettingsById } from "@/lib/event";
 import { can } from "@/lib/sponsor-lifecycle";
 
 export type InviteState = { ok: boolean; message?: string; previewUrl?: string };
@@ -48,7 +48,8 @@ export async function sendInviteAction(
   const issuedAt = new Date();
   const expiresAt = tokenExpiry(issuedAt);
 
-  const { name: event } = await getEventSettings();
+  // Sponsor-facing: use the sponsor's own event, not the default one (P0-1).
+  const { name: event } = await getEventSettingsById(eventId);
 
   const link = `${SITE_URL}/invite/${token}`;
   const fields: Record<string, string> = {

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAdminEventId, getEventSettings } from "@/lib/event";
+import { getAdminEventId, getEventSettingsById } from "@/lib/event";
 import { sendMail } from "@/lib/email";
 import { renderTemplate } from "@/lib/template";
 import { SITE_URL } from "@/lib/site";
@@ -131,7 +131,8 @@ export async function sendComposedEmailAction(
     return { ok: false, message: "Please fix the highlighted fields.", errors };
   }
 
-  const { name: event } = await getEventSettings();
+  // Sponsor-facing merge field: use the composing event, not the default (P0-1).
+  const { name: event } = await getEventSettingsById(eventId);
   const fields: Record<string, string> = {
     event,
     companyName: sponsor?.companyName ?? "",

@@ -4,9 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { formatPrice, parseBenefits } from "@/lib/format";
 import { isTokenExpired } from "@/lib/magic-token";
 import { slotsTaken } from "@/lib/slots";
-import { getEventSettings } from "@/lib/event";
+import { getEventSettingsById } from "@/lib/event";
+import { redirect } from "next/navigation";
 import { acceptAction, declineAction } from "./actions";
-import { SponsorPortal } from "./sponsor-portal";
 
 export const dynamic = "force-dynamic";
 
@@ -30,13 +30,10 @@ export async function generateMetadata({
 
 export default async function ProposalPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { token } = await params;
-  const sp = await searchParams;
   const sponsor = await prisma.sponsor.findUnique({
     where: { magicToken: token },
     include: { package: true },
@@ -67,28 +64,18 @@ export default async function ProposalPage({
 
   const status = sponsor!.status;
 
-  // ── Portal view — the sponsor has accepted; shared with the account portal ──
+  // ── Accepted → exchange the URL token for an httpOnly session cookie and run
+  // the portal at the tokenless /portal, so the standing portal URL can't be
+  // copied, forwarded, bookmarked or leaked as a bearer credential (QA P0-2). ──
   if ((PORTAL_STATUSES as readonly string[]).includes(status)) {
-    return (
-      <SponsorPortal
-        sponsor={sponsor!}
-        token={token}
-        mode="token"
-        flags={{
-          paid: typeof sp.paid === "string",
-          cancel: sp.paycancel === "1",
-          error: typeof sp.payerror === "string" ? sp.payerror : null,
-          pwError: typeof sp.pwerr === "string" ? sp.pwerr : null,
-          signed: sp.signed === "1",
-          signError: sp.signerr === "1",
-          saved: sp.saved === "1",
-        }}
-      />
-    );
+    redirect(`/portal/enter/${token}`);
   }
 
   // ── Proposal view — not yet accepted (INVITE_SENT) or declined ─────────────
-  const { name: event, venue, startDate, endDate } = await getEventSettings();
+  // Sponsor-facing: reflect the sponsor's own event, not the default one (P0-1).
+  const { name: event, venue, startDate, endDate } = await getEventSettingsById(
+    sponsor!.eventId,
+  );
   const pkg = sponsor!.package;
   if (!pkg) {
     return (

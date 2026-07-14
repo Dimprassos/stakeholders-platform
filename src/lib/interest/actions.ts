@@ -1,8 +1,10 @@
 "use server";
 
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { LIMITS, isValidPhone, normalizePhone } from "@/lib/validation";
 import { getCurrentEventId } from "@/lib/event";
+import { rateLimit } from "@/lib/rate-limit";
 import type { SubmitState } from "./types";
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -19,6 +21,19 @@ export async function submitInterest(
   // Honeypot: real users never fill the hidden "website" field. Pretend success.
   if (str(formData, "website")) {
     return { ok: true, message: "Thank you — we'll be in touch." };
+  }
+
+  // Rate limit: cap rapid repeat submissions from one client so the inbox
+  // can't be flooded (PLAN §11). Keyed by client IP; 5 per 10 minutes.
+  const hdrs = await headers();
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+  const limit = rateLimit(`interest:${ip}`, { limit: 5, windowMs: 10 * 60_000 });
+  if (!limit.ok) {
+    const mins = Math.ceil(limit.retryAfterSec / 60);
+    return {
+      ok: false,
+      message: `Too many submissions from this connection. Please try again in about ${mins} minute${mins === 1 ? "" : "s"}.`,
+    };
   }
 
   const companyName = str(formData, "companyName");

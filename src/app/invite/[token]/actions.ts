@@ -6,10 +6,10 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { isTokenExpired, portalExpiry } from "@/lib/magic-token";
+import { generateMagicToken, isTokenExpired, portalExpiry } from "@/lib/magic-token";
 import { declineSponsor } from "@/lib/sponsor-decline";
 import { getStripe } from "@/lib/stripe";
-import { createSponsorSession } from "@/lib/sponsor-auth";
+import { createSponsorSession, getCurrentSponsor } from "@/lib/sponsor-auth";
 import {
   findSponsorsByContactEmail,
   isSponsorAccountStatus,
@@ -82,13 +82,23 @@ export async function acceptAction(formData: FormData): Promise<void> {
   const token = str(formData, "token");
   const sponsor = await getSponsorByToken(token);
   if (!sponsor) return;
+  // Rotate the token on acceptance: the invite link that travelled by email is
+  // the copy most exposed to forwarding, mailbox access or Referer leakage, so
+  // burn it once it has done its job. From here on the sponsor's ongoing access
+  // is an httpOnly session cookie (not a URL bearer), so establish it now and
+  // send them to the tokenless /portal.
+  const nextToken = generateMagicToken();
   await prisma.sponsor.update({
     where: { id: sponsor.id },
-    // From acceptance on, the link is the sponsor's ongoing portal — give it a
-    // long window so they keep access to status, materials and payments.
-    data: { status: "ACCEPTED", tokenExpiresAt: portalExpiry() },
+    data: {
+      status: "ACCEPTED",
+      magicToken: nextToken,
+      tokenIssuedAt: new Date(),
+      tokenExpiresAt: portalExpiry(),
+    },
   });
-  revalidatePath(`/invite/${token}`);
+  await createSponsorSession(sponsor.id);
+  redirect("/portal");
 }
 
 export async function declineAction(formData: FormData): Promise<void> {
@@ -106,10 +116,10 @@ export async function submitOnboardingAction(
   _prev: OnboardingState,
   formData: FormData,
 ): Promise<OnboardingState> {
-  const token = str(formData, "token");
-  const sponsor = await getSponsorByToken(token);
+  // Cookie-authenticated: the onboarding form lives in the tokenless /portal.
+  const sponsor = await getCurrentSponsor();
   if (!sponsor) {
-    return { ok: false, message: "This invite link is invalid or has expired." };
+    return { ok: false, message: "Your session has expired. Please sign in again." };
   }
   if (sponsor.status === "DECLINED") {
     return { ok: false, message: "You previously declined this invitation." };
@@ -203,11 +213,9 @@ export async function submitOnboardingAction(
   revalidatePath("/admin/candidates");
   revalidatePath("/admin");
 
-  // Return the sponsor to their portal (magic-link or account) with a success
-  // banner — never a dead-end "thank you" page that only links back to the site.
-  const back = safeReturn(str(formData, "returnTo"), token);
-  revalidatePath(back);
-  redirect(`${back}?saved=1`);
+  // Back to the (tokenless) portal with a success banner.
+  revalidatePath("/portal");
+  redirect("/portal?saved=1");
 }
 
 /**
@@ -217,18 +225,18 @@ export async function submitOnboardingAction(
  * the Payment PAID.
  */
 export async function startCheckoutAction(formData: FormData): Promise<void> {
-  const token = str(formData, "token");
   const paymentId = str(formData, "paymentId");
-  const sponsor = await getSponsorByToken(token);
-  if (!sponsor) redirect(`/invite/${token}`);
+  // Cookie-authenticated: "Pay now" lives in the tokenless /portal.
+  const sponsor = await getCurrentSponsor();
+  if (!sponsor) redirect("/sponsor/login");
 
   const payment = await prisma.payment.findFirst({
     where: { id: paymentId, sponsorId: sponsor.id, status: "PENDING" },
   });
-  if (!payment) redirect(`/invite/${token}`);
+  if (!payment) redirect("/portal");
 
   const stripe = getStripe();
-  if (!stripe) redirect(`/invite/${token}?payerror=config`);
+  if (!stripe) redirect("/portal?payerror=config");
 
   let checkoutUrl: string | null = null;
   try {
@@ -251,8 +259,8 @@ export async function startCheckoutAction(formData: FormData): Promise<void> {
       customer_email: sponsor.contactEmail || undefined,
       // Return via a reconciliation step that confirms payment with Stripe and
       // marks it PAID immediately, so the portal never re-shows "Pay now".
-      success_url: `${SITE_URL}/invite/${token}/paid?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${SITE_URL}/invite/${token}?paycancel=1`,
+      success_url: `${SITE_URL}/portal/paid?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_URL}/portal?paycancel=1`,
       metadata: { paymentId: payment.id, sponsorId: sponsor.id },
     });
     await prisma.payment.update({
@@ -265,7 +273,7 @@ export async function startCheckoutAction(formData: FormData): Promise<void> {
   }
 
   // redirect() throws NEXT_REDIRECT, so it must live outside the try/catch.
-  if (!checkoutUrl) redirect(`/invite/${token}?payerror=1`);
+  if (!checkoutUrl) redirect("/portal?payerror=1");
   redirect(checkoutUrl);
 }
 
@@ -275,56 +283,51 @@ export async function startCheckoutAction(formData: FormData): Promise<void> {
  * email ownership), then signs them in and sends them to the account portal.
  */
 export async function setSponsorPasswordAction(formData: FormData): Promise<void> {
-  const token = str(formData, "token");
   const password = str(formData, "password");
-  const sponsor = await getSponsorByToken(token);
-  if (!sponsor || !sponsor.contactEmail) redirect(`/invite/${token}`);
-  if (password.length < 8) redirect(`/invite/${token}?pwerr=short`);
+  // Cookie-authenticated: only the logged-in sponsor can set their own password.
+  // (Previously token-authenticated, which let anyone holding a leaked link set
+  // or overwrite the account credential — QA P0-2 / SEC-01.)
+  const sponsor = await getCurrentSponsor();
+  if (!sponsor || !sponsor.contactEmail) redirect("/portal");
+  // First-time only: never overwrite an existing password.
+  if (sponsor.passwordHash) redirect("/portal");
+  if (password.length < 8) redirect("/portal?pwerr=short");
 
   const contactEmail = normalizeContactEmail(sponsor.contactEmail);
-  if (!contactEmail) redirect(`/invite/${token}`);
+  if (!contactEmail) redirect("/portal");
 
   const duplicateAccount = (await findSponsorsByContactEmail(sponsor.eventId, contactEmail))
     .filter((s) => s.id !== sponsor.id)
     .find((s) => s.passwordHash && isSponsorAccountStatus(s.status));
-  if (duplicateAccount) redirect(`/invite/${token}?pwerr=duplicate`);
+  if (duplicateAccount) redirect("/portal?pwerr=duplicate");
 
   const passwordHash = await bcrypt.hash(password, 10);
   await prisma.sponsor.update({
     where: { id: sponsor.id },
     data: { contactEmail, passwordHash },
   });
-  await createSponsorSession(sponsor.id);
   redirect("/portal");
-}
-
-/** Return path that keeps the sponsor where they are (link vs. account portal). */
-function safeReturn(returnTo: string, token: string): string {
-  if (returnTo === "/portal" || returnTo === `/invite/${token}`) return returnTo;
-  return `/invite/${token}`;
 }
 
 /**
  * The sponsor signs a sent contract from their portal (docs/PLAN.md §16 Phase F).
- * Records the typed name, timestamp and IP as the e-signature. Token-authenticated,
- * so it works from both the magic-link and the account portal.
+ * Records the typed name, timestamp and IP as the e-signature. Cookie-
+ * authenticated: contract signing lives in the tokenless /portal.
  */
 export async function signContractAction(formData: FormData): Promise<void> {
-  const token = str(formData, "token");
   const contractId = str(formData, "contractId");
   const name = str(formData, "name");
   const agree = formData.get("agree") === "on";
-  const back = safeReturn(str(formData, "returnTo"), token);
 
-  const sponsor = await getSponsorByToken(token);
-  if (!sponsor) redirect(`/invite/${token}`);
+  const sponsor = await getCurrentSponsor();
+  if (!sponsor) redirect("/sponsor/login");
 
   const contract = await prisma.contract.findFirst({
     where: { id: contractId, sponsorId: sponsor.id, status: "SENT" },
     select: { id: true },
   });
-  if (!contract) redirect(back);
-  if (!name || !agree) redirect(`${back}?signerr=1`);
+  if (!contract) redirect("/portal");
+  if (!name || !agree) redirect("/portal?signerr=1");
 
   const hdrs = await headers();
   const ip = hdrs.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
@@ -334,5 +337,5 @@ export async function signContractAction(formData: FormData): Promise<void> {
     data: { status: "SIGNED", signedName: name, signedAt: new Date(), signedIp: ip },
   });
   revalidatePath("/admin/candidates");
-  redirect(`${back}?signed=1`);
+  redirect("/portal?signed=1");
 }

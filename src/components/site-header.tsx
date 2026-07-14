@@ -22,9 +22,13 @@ export function SiteHeader() {
         >
           {SITE_LOGO_URL ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={SITE_LOGO_URL} alt={SITE_NAME} className="h-8 w-auto object-contain" />
+            <img
+              src={SITE_LOGO_URL}
+              alt={SITE_NAME}
+              className="h-9 w-auto object-contain dark:brightness-0 dark:invert"
+            />
           ) : (
-            SITE_NAME
+            <span>{SITE_NAME}</span>
           )}
         </Link>
 

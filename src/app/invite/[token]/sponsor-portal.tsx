@@ -28,13 +28,9 @@ const STATUS_META: Record<string, { label: string; tone: Tone }> = {
 
 export async function SponsorPortal({
   sponsor,
-  token,
-  mode,
   flags,
 }: {
   sponsor: SponsorWithPackage;
-  token: string;
-  mode: "token" | "session";
   flags: {
     paid: boolean;
     cancel: boolean;
@@ -45,8 +41,10 @@ export async function SponsorPortal({
     saved: boolean;
   };
 }) {
-  const basePath = mode === "session" ? "/portal" : `/invite/${token}`;
-  const formHref = `/invite/${token}/form?return=${encodeURIComponent(basePath)}`;
+  // The portal is cookie-authenticated and tokenless (QA P0-2): no magic token
+  // appears in the URL or in any form here.
+  const basePath = "/portal";
+  const formHref = "/portal/form";
 
   const [event, payments, contract] = await Promise.all([
     prisma.event.findUnique({
@@ -143,7 +141,7 @@ export async function SponsorPortal({
     <PortalShell
       event={portalEvent}
       companyName={sponsor.companyName}
-      mode={mode}
+      mode="session"
       homeHref={basePath}
     >
       {/* Hero */}
@@ -258,9 +256,7 @@ export async function SponsorPortal({
                   </p>
                 )}
                 <form action={signContractAction} className="space-y-3">
-                  <input type="hidden" name="token" value={token} />
                   <input type="hidden" name="contractId" value={contract.id} />
-                  <input type="hidden" name="returnTo" value={basePath} />
                   <label className="flex items-start gap-2 text-sm">
                     <input type="checkbox" name="agree" required className="mt-1" />
                     <span>
@@ -311,7 +307,6 @@ export async function SponsorPortal({
                       </div>
                       {stripeReady && !multipleOpenPayments ? (
                         <form action={startCheckoutAction}>
-                          <input type="hidden" name="token" value={token} />
                           <input type="hidden" name="paymentId" value={p.id} />
                           <button type="submit" className={primaryBtn}>
                             Pay now
@@ -517,13 +512,13 @@ export async function SponsorPortal({
         </div>
       </div>
 
-      {/* Account activation (magic-link visitors without a password yet) */}
-      {mode === "token" && !sponsor.passwordHash && sponsor.contactEmail && (
+      {/* Account activation — set a durable password (cookie-authenticated) */}
+      {!sponsor.passwordHash && sponsor.contactEmail && (
         <section className="mt-8 rounded-2xl border border-[color:var(--line)] bg-[color:var(--surface-bg)] p-6 backdrop-blur-sm">
           <h2 className="text-sm font-semibold">Optional: create a login</h2>
           <p className="mt-1 text-sm text-zinc-500">
-            Keep using this personal link, or set a password to return anytime from
-            Sponsor login with {sponsor.contactEmail}.
+            Set a password to return anytime from Sponsor login with{" "}
+            {sponsor.contactEmail}.
           </p>
           {flags.pwError && (
             <p className="mt-2 text-sm text-red-700 dark:text-red-400">
@@ -536,7 +531,6 @@ export async function SponsorPortal({
             action={setSponsorPasswordAction}
             className="mt-3 flex flex-wrap items-center gap-2"
           >
-            <input type="hidden" name="token" value={token} />
             <input
               type="password"
               name="password"

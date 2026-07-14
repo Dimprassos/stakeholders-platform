@@ -97,3 +97,23 @@ export const getEventSettings = cache(async (): Promise<EventSettings> => {
     language: event?.language ?? "en",
   };
 });
+
+/**
+ * Public-facing identity for a *specific* event by id. Sponsor-facing content
+ * (invite/payment/contract emails, the proposal page) must reflect the event a
+ * sponsor actually belongs to — never the default event — or a multi-event
+ * setup shows the wrong name/dates/venue (QA P0-1). Cached per (request, id).
+ */
+export const getEventSettingsById = cache(
+  async (eventId: string): Promise<EventSettings> => {
+    const event = await prisma.event.findUnique({ where: { id: eventId } });
+    return {
+      name: event?.name ?? "Stakeholders Summit 2026",
+      tagline: event?.tagline ?? "Where industry leaders and brands connect.",
+      startDate: event?.startDate ?? null,
+      endDate: event?.endDate ?? null,
+      venue: event?.venue ?? null,
+      language: event?.language ?? "en",
+    };
+  },
+);

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getCurrentSponsor, ensurePortalToken } from "@/lib/sponsor-auth";
+import { getCurrentSponsor } from "@/lib/sponsor-auth";
 import { SponsorPortal } from "@/app/invite/[token]/sponsor-portal";
 
 export const dynamic = "force-dynamic";
@@ -15,19 +15,16 @@ export default async function PortalPage({
   const sponsor = await getCurrentSponsor();
   if (!sponsor) redirect("/sponsor/login");
 
-  const token = await ensurePortalToken(sponsor);
   const sp = await searchParams;
 
   return (
     <SponsorPortal
       sponsor={sponsor}
-      token={token}
-      mode="session"
       flags={{
         paid: typeof sp.paid === "string",
         cancel: sp.paycancel === "1",
         error: typeof sp.payerror === "string" ? sp.payerror : null,
-        pwError: null,
+        pwError: typeof sp.pwerr === "string" ? sp.pwerr : null,
         signed: sp.signed === "1",
         signError: sp.signerr === "1",
         saved: sp.saved === "1",

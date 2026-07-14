@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getAdminEventId, getEventSettings } from "@/lib/event";
+import { getAdminEventId, getEventSettingsById } from "@/lib/event";
 import { sendMail } from "@/lib/email";
 import { SITE_URL } from "@/lib/site";
 import { isTokenExpired } from "@/lib/magic-token";
@@ -82,7 +82,8 @@ async function contractSendRedirect(contractId: string, eventId: string): Promis
     !isTokenExpired(sponsor.tokenExpiresAt);
   let previewParam = "";
   if (canEmail) {
-    const { name: event } = await getEventSettings();
+    // Sponsor-facing: name the sponsor's own event, not the default one (P0-1).
+    const { name: event } = await getEventSettingsById(eventId);
     const link = `${SITE_URL}/invite/${sponsor.magicToken}`;
     const subject = `Contract to sign — ${event}`;
     const text =

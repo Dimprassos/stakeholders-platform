@@ -49,7 +49,7 @@ export default async function AdminLayout({
                 <img
                   src={SITE_LOGO_URL}
                   alt={SITE_NAME}
-                  className="h-7 w-auto object-contain"
+                  className="h-8 w-auto object-contain dark:brightness-0 dark:invert"
                 />
               ) : (
                 <span className="text-base font-semibold tracking-tight">{SITE_NAME}</span>
